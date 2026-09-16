@@ -9,16 +9,16 @@ Un sistema end-to-end de **Data Science & Machine Learning** diseñado para opti
 ---
 
 ## 📋 Tabla de Contenidos
-- [Visión General](#visión-general)
+- [Visión General](#vision-general)
 - [Arquitectura de Datos](#arquitectura-de-datos)
 - [Estructura del Repositorio](#estructura-del-repositorio)
 - [Capa Gold y Contrato de Datos](#capa-gold-y-contrato-de-datos)
-- [Instalación y Configuración](#instalación-y-configuración)
+- [Instalación y Configuración](#instalacion-y-configuracion)
 - [Roadmap del Proyecto](#roadmap-del-proyecto)
 
 ---
 
-## 🎯 Visión General
+## <a name="vision-general"></a>🎯 Visión General
 
 El modelo de negocio de los clubes de pádel tradicionales presenta dos problemas operacionales críticos:
 1. **Pistas desiertas en horas valle** debido a barreras de precio fijo.
@@ -33,7 +33,7 @@ Esta solución utiliza modelos predictivos para estimar la probabilidad de ocupa
 
 ---
 
-## 🏛️ Arquitectura de Datos
+## <a name="arquitectura-de-datos"></a>🏛️ Arquitectura de Datos
 
 El pipeline aplica una **Arquitectura Medallón (Medallion Architecture)** combinando **SQLite** para la persistencia relacional transaccional y **Apache Parquet** para almacenamiento columnar comprimido en las capas analíticas:
 
@@ -53,7 +53,7 @@ El pipeline aplica una **Arquitectura Medallón (Medallion Architecture)** combi
 
 ---
 
-## 📁 Estructura del Repositorio
+## <a name="estructura-del-repositorio"></a>📁 Estructura del Repositorio
 
 ```text
 ├── data/                  # Estructura Medallón (git-ignored en entornos prod)
@@ -74,7 +74,7 @@ El pipeline aplica una **Arquitectura Medallón (Medallion Architecture)** combi
 
 ---
 
-## 📊 Capa Gold y Contrato de Datos
+## <a name="capa-gold-y-contrato-de-datos"></a>📊 Capa Gold y Contrato de Datos
 
 El dataset central de trabajo (`gold_pistas_demanda.parquet`) consolida la información a nivel de **Slot de 90 min por Pista**:
 
@@ -93,7 +93,7 @@ El dataset central de trabajo (`gold_pistas_demanda.parquet`) consolida la infor
 
 ---
 
-## ⚙️ Instalación y Configuración
+## <a name="instalacion-y-configuracion"></a>⚙️ Instalación y Configuración
 
 ### 1. Clonar el repositorio
 ```text
@@ -110,11 +110,11 @@ pip install -r requirements.txt
 
 ---
 
-## 🚀 Roadmap del Proyecto
+## <a name="roadmap-del-proyecto"></a>🚀 Roadmap del Proyecto
 
-- [x] **Fase 1:** Definición del caso de uso e impacto de negocio (`01_ideas_producto.md`)
-- [x] **Fase 2:** Análisis de viabilidad y requerimientos de datos (`02_datos_necesarios.md`)
-- [x] **Fase 3:** Diseño de la arquitectura de datos y Capa Gold (`03_modelo_datos.md`)
+- [x] **Fase 1:** Definición del caso de uso e impacto de negocio (`01_ideas_producto.md`)[cite: 2]
+- [x] **Fase 2:** Análisis de viabilidad y requerimientos de datos (`02_datos_necesarios.md`)[cite: 2]
+- [x] **Fase 3:** Diseño de la arquitectura de datos y Capa Gold (`03_modelo_datos.md`)[cite: 2]
 - [ ] **Fase 4:** Pipelines de Extracción y Ingesta ETL (Open-Meteo & Reservas)
 - [ ] **Fase 5:** Exploración de Datos (EDA) y Feature Engineering
 - [ ] **Fase 6:** Entrenamiento y Evaluación de Modelos ML (Clasificación/Regresión de Demanda)
