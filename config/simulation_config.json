@@ -1,0 +1,34 @@
+{
+  "simulation": {
+    "start_date": "2024-01-01",
+    "end_date": "2025-12-31",
+    "seed": 42,
+    "timezone": "Atlantic/Canary",
+    "slot_duration_minutes": 90,
+    "slot_start_times": ["08:00", "09:30", "11:00", "12:30", "14:00", "15:30", "17:00", "18:30", "20:00", "21:30"],
+    "courts": [
+      {"id": "exterior_1", "type": "exterior"},
+      {"id": "exterior_2", "type": "exterior"},
+      {"id": "exterior_3", "type": "exterior"},
+      {"id": "exterior_4", "type": "exterior"},
+      {"id": "interior_1", "type": "interior"},
+      {"id": "interior_2", "type": "interior"}
+    ],
+    "weather": {
+      "source": "open-meteo",
+      "location_name": "Las Palmas de Gran Canaria",
+      "latitude": 28.1235,
+      "longitude": -15.4363
+    },
+    "occupancy": {
+      "base_price_eur": 12.0,
+      "price_sensitivity": "medium",
+      "cancellation_rate": 0.08,
+      "no_show_rate": 0.02
+    },
+    "operational": {
+      "maintenance_block_rate": 0.01,
+      "tournament_block_rate": 0.003
+    }
+  }
+}
