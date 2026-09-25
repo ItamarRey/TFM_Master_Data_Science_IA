@@ -149,6 +149,27 @@ El script no modifica los datos y trabaja únicamente sobre Gold. Por ello es co
 
 ---
 
+## Entrenamiento y comparación de modelos
+
+Tras generar Gold, ejecuta:
+
+```text
+python scripts/train_occupancy_models.py
+```
+
+El experimento excluye turnos bloqueados y usa solo variables disponibles 48 h antes: calendario, pista, tarifa publicada y pronóstico meteorológico. Reserva el segundo año como test temporal, por lo que nunca usa datos posteriores para entrenar.
+
+Compara un baseline histórico por segmento, una regresión logística y un modelo de gradient boosting. El modelo desplegable se selecciona entre los modelos predictivos por menor Brier score, una métrica de calidad de probabilidades. Genera:
+
+- `models/occupancy_model.joblib`;
+- `models/occupancy_model_metadata.json`;
+- `reports/generated/model_comparison.md`;
+- `reports/generated/occupancy_test_predictions.parquet`.
+
+La comparación mide capacidad predictiva; no identifica de forma causal el efecto del precio ni prueba un impacto económico real. La recomendación de tarifa se tratará después mediante escenarios de sensibilidad explícitos.
+
+---
+
 ## <a name="roadmap-del-proyecto"></a>🚀 Roadmap del Proyecto
 
 - [x] **Fase 1:** Definición del caso de uso e impacto de negocio (`01_ideas_producto.md`)[cite: 2]
