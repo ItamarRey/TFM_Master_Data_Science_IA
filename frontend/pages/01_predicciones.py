@@ -3,7 +3,7 @@ from datetime import date, timedelta
 import plotly.graph_objects as go
 import streamlit as st
 
-from frontend.services.api_client import create_prediction
+from services.api_client import create_prediction
 
 
 COURTS = ["exterior_1", "exterior_2", "exterior_3", "exterior_4", "interior_1", "interior_2"]
