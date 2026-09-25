@@ -13,6 +13,11 @@ from padel_pricing.simulation import (
     generate_operational_data,
     load_simulation_config,
 )
+from padel_pricing.data_quality import (
+    build_gold_dataset,
+    clean_operational_data,
+    inject_controlled_issues,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -47,16 +52,30 @@ def main() -> None:
         directory.mkdir(parents=True, exist_ok=True)
 
     weather = fetch_weather(config)
-    data = generate_operational_data(config, weather)
+    operational_truth = generate_operational_data(config, weather)
+    raw_operational, injected_issues = inject_controlled_issues(operational_truth, config)
+    silver_operational, quality_report = clean_operational_data(raw_operational)
+    gold_data = build_gold_dataset(silver_operational, config)
 
     weather.to_json(raw_dir / "weather_hourly.json", orient="records", date_format="iso")
     weather.to_parquet(processed_dir / "weather_hourly.parquet", index=False)
-    data.to_parquet(gold_dir / "gold_slots_pistas.parquet", index=False)
+    raw_operational.to_csv(raw_dir / "operational_slots_raw.csv", index=False)
+    silver_operational.to_parquet(processed_dir / "silver_slots_pistas.parquet", index=False)
+    gold_data.to_parquet(gold_dir / "gold_slots_pistas.parquet", index=False)
+    (processed_dir / "operational_quality_report.json").write_text(
+        json.dumps(
+            {"injected_issues": injected_issues, "cleaning_result": quality_report},
+            indent=2,
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
 
     metadata = {
         "schema_version": "1.0",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "rows": len(data),
+        "rows": len(gold_data),
+        "raw_operational_rows": len(raw_operational),
         "seed": config.seed,
         "weather_source": config.weather.source,
         "configuration": asdict(config),
@@ -68,16 +87,23 @@ def main() -> None:
                 "Meteorología real con un error simulado que representa la información "
                 "disponible 48 h antes."
             ),
+            "raw_quality_issues": (
+                "Incidencias sintéticas pequeñas, reproducibles y documentadas, "
+                "inyectadas solo para validar la capa Silver."
+            ),
         },
+        "data_quality": quality_report,
     }
     (gold_dir / "gold_slots_pistas_metadata.json").write_text(
         json.dumps(metadata, indent=2, default=str, ensure_ascii=False), encoding="utf-8"
     )
 
-    occupied = data.loc[~data["bloqueado"], "ocupado_final"].mean()
-    print(f"Dataset creado: {len(data):,} turnos")
+    occupied = gold_data.loc[~gold_data["bloqueado"], "ocupado_final"].mean()
+    print(f"Extracto Raw operativo: {len(raw_operational):,} filas")
+    print(f"Capa Silver: {len(silver_operational):,} turnos | Duplicados eliminados: {quality_report['duplicate_rows_removed']}")
+    print(f"Dataset Gold: {len(gold_data):,} turnos")
     print(f"Ocupación final en turnos elegibles: {occupied:.1%}")
-    print(f"Dataset Gold: {gold_dir / 'gold_slots_pistas.parquet'}")
+    print(f"Informe de calidad: {processed_dir / 'operational_quality_report.json'}")
 
 
 if __name__ == "__main__":
