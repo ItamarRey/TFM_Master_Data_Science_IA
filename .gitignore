@@ -21,6 +21,10 @@ data/gold/*
 models/*
 !models/.gitkeep
 
+# Informes generados a partir de datos locales
+reports/generated/*
+!reports/generated/.gitkeep
+
 # Sistema y editor
 .DS_Store
 Thumbs.db
