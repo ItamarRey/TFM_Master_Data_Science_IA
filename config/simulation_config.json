@@ -29,6 +29,14 @@
     "operational": {
       "maintenance_block_rate": 0.01,
       "tournament_block_rate": 0.003
+    },
+    "data_quality": {
+      "inject_controlled_issues": true,
+      "duplicate_rate": 0.005,
+      "date_format_issue_rate": 0.003,
+      "price_format_issue_rate": 0.004,
+      "category_format_issue_rate": 0.004,
+      "forecast_missing_rate": 0.006
     }
   }
 }
