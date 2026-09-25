@@ -1,17 +1,17 @@
 from fastapi import APIRouter, HTTPException
 
 from backend.app.schemas.prediction import PredictionRequest, PredictionResponse
+from backend.app.services.prediction_service import ModelNotReadyError, predict_turn
 
 router = APIRouter()
 
 
 @router.post("/", response_model=PredictionResponse)
 def create_prediction(request: PredictionRequest) -> PredictionResponse:
-    """Punto de conexión para el modelo que se implementará en la siguiente fase."""
-    raise HTTPException(
-        status_code=501,
-        detail=(
-            "El endpoint está preparado, pero todavía no se ha conectado el generador "
-            "de datos y el modelo de ocupación."
-        ),
-    )
+    """Predice la ocupación y genera una recomendación de precio revisable."""
+    try:
+        return PredictionResponse(**predict_turn(request))
+    except ModelNotReadyError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
