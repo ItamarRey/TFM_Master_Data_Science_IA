@@ -86,6 +86,8 @@ def _write_markdown_report(
         "estados finales ni meteorología observada.",
         "- La selección se realiza por menor Brier score, porque el producto necesita "
         "probabilidades bien calibradas.",
+        "- La regularización de la regresión logística se selecciona dentro del periodo de "
+        "entrenamiento con validación temporal; el test final no se utiliza para ajustarla.",
         "",
         "## Resultados en test",
         "",
@@ -98,6 +100,39 @@ def _write_markdown_report(
             "| {name} | {roc_auc:.4f} | {average_precision:.4f} | {brier_score:.4f} | "
             "{log_loss:.4f} | {accuracy_at_0_5:.4f} | {precision_at_0_5:.4f} | "
             "{recall_at_0_5:.4f} | {f1_at_0_5:.4f} |".format(name=model_name, **values)
+        )
+    tuning = metadata["tuning"]
+    assert isinstance(tuning, dict)
+    lines.extend(
+        [
+            "",
+            "## Ajuste interno de la regresión logística",
+            "",
+            f"- Método: {tuning['method']}.",
+            f"- Parámetro de regularización seleccionado (`C`): **{tuning['selected_c']}**.",
+        ]
+    )
+    lines.extend(
+        [
+            "",
+            "## Calibración del modelo seleccionado",
+            "",
+            "Una probabilidad bien calibrada se aproxima a la ocupación observada dentro de "
+            "cada intervalo. Las diferencias pequeñas son deseables.",
+            "",
+            "| intervalo | turnos | ocupación observada | probabilidad media | "
+            "diferencia absoluta |",
+            "| --- | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    diagnostics = metadata["diagnostics"]
+    assert isinstance(diagnostics, dict)
+    selected_diagnostics = diagnostics[metadata["selected_model"]]
+    assert isinstance(selected_diagnostics, dict)
+    for item in selected_diagnostics["calibration"]:
+        lines.append(
+            "| {bin_calibracion} | {turnos} | {ocupacion_observada:.4f} | "
+            "{probabilidad_media:.4f} | {diferencia_absoluta:.4f} |".format(**item)
         )
     lines.extend(
         [
