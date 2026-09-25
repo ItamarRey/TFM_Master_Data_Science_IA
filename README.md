@@ -42,7 +42,7 @@ El pipeline aplica una **Arquitectura Medallón (Medallion Architecture)** combi
    │  ├─ API Open-Meteo (JSON)
    │  └─ Reservas Club (SQLite/CSV)
    ▼
-[ data/raw/ ] ──────────────► Almacenamiento en bruto e inmutable.
+[ data/raw/ ] ──────────────► Extractos de origen, sin limpiar.
    │
    ▼ (Data Pipelines / Cleaning)
 [ data/processed/ ] ────────► Datos tipados, limpios y filtrados (Parquet).
@@ -50,6 +50,8 @@ El pipeline aplica una **Arquitectura Medallón (Medallion Architecture)** combi
    ▼ (Feature Engineering & Joins)
 [ data/gold/ ] ─────────────► Datasets analíticos unificados para ML y Dashboard.
 ```
+
+Para validar el pipeline sin datos de un club, la simulación añade en Raw un volumen pequeño y reproducible de duplicados, formatos de fecha/precio/categoría inconsistentes y valores ausentes de pronóstico. Son incidencias de prueba documentadas en configuración; no se interpretan como comportamiento real de un club. Silver las normaliza y Gold solo se publica si cumple el contrato de calidad.
 
 ---
 
@@ -121,12 +123,17 @@ python scripts/generate_synthetic_data.py
 
 El comando descarga meteorología histórica pública para la ubicación configurada y crea:
 
-- `data/raw/weather_hourly.json`;
+- `data/raw/weather_hourly.json`: extracto horario de meteorología;
+- `data/raw/operational_slots_raw.csv`: extracto operativo simulado con incidencias de calidad controladas;
 - `data/processed/weather_hourly.parquet`;
+- `data/processed/silver_slots_pistas.parquet`: datos operativos limpios y tipados;
+- `data/processed/operational_quality_report.json`: incidencias inyectadas y resultado de la limpieza;
 - `data/gold/gold_slots_pistas.parquet`;
 - `data/gold/gold_slots_pistas_metadata.json`.
 
 Para desarrollar sin conexión se puede usar `python scripts/generate_synthetic_data.py --weather-source synthetic`. Este modo se identifica como sintético en los metadatos y no sustituye la ejecución final con meteorología pública.
+
+Las tasas de incidencia se configuran en `config/simulation_config.json`, dentro de `data_quality`. La semilla hace que tanto la simulación como esas incidencias sean reproducibles. No cambies las tasas después de generar resultados que vayas a comparar en la memoria.
 
 ---
 
@@ -138,9 +145,7 @@ Después de generar el dataset Gold, ejecuta:
 python scripts/run_eda.py
 ```
 
-El script no modifica los datos. Genera `reports/generated/eda_summary.md` y
-`reports/generated/eda_metrics.json` con controles de calidad, ocupación por
-franja y pista, efecto de la lluvia en pistas exteriores e ingresos simulados.
+El script no modifica los datos y trabaja únicamente sobre Gold. Por ello es correcto que sus controles indiquen cero duplicados: estos deben haberse detectado y resuelto antes, en Silver. Genera `reports/generated/eda_summary.md` y `reports/generated/eda_metrics.json` con controles de calidad, ocupación por franja y pista, efecto de la lluvia en pistas exteriores e ingresos simulados.
 
 ---
 
