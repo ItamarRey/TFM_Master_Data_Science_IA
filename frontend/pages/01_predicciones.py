@@ -87,9 +87,9 @@ def show_sidebar() -> None:
         st.markdown('<div class="brand">🎾 PádelPulse</div>', unsafe_allow_html=True)
         st.markdown('<p class="brand-subtitle">Revenue management</p>', unsafe_allow_html=True)
         st.divider()
-        st.page_link("pages/01_predicciones.py", label="Predicciones", icon="◉")
-        st.page_link("pages/02_escenarios.py", label="Escenarios", icon="◌")
-        st.page_link("pages/03_historico.py", label="Histórico", icon="◌")
+        st.page_link("pages/01_predicciones.py", label="Predicciones", icon="🎯")
+        st.page_link("pages/02_escenarios.py", label="Escenarios", icon="💶")
+        st.page_link("pages/03_historico.py", label="Histórico", icon="📊")
         st.divider()
         st.caption("Gestión del club\n\nModo simulación")
 
@@ -252,7 +252,7 @@ with right:
                 st.session_state["applied_message"] = "Acción simulada: no se ha modificado ninguna reserva ni tarifa real."
             if st.button("Mantener tarifa base", use_container_width=True):
                 st.session_state["applied_message"] = "Acción simulada: se mantiene la tarifa base."
-            st.page_link("pages/02_escenarios.py", label="Comparar escenarios", icon="↗", use_container_width=True)
+            st.page_link("pages/02_escenarios.py", label="Comparar escenarios", icon="📈", use_container_width=True)
             if message := st.session_state.get("applied_message"):
                 st.success(message)
             difference = float(result["expected_revenue_suggested"]) - float(result["expected_revenue_current"])
