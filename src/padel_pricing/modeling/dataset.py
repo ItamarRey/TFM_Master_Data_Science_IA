@@ -51,7 +51,8 @@ def prepare_modeling_data(gold_data: pd.DataFrame) -> pd.DataFrame:
     if missing_columns:
         raise ValueError(f"Faltan columnas para modelado: {sorted(missing_columns)}")
 
-    data = gold_data.loc[~gold_data["bloqueado"], [TIMESTAMP_COLUMN, *MODEL_FEATURES, TARGET_COLUMN]].copy()
+    selected_columns = [TIMESTAMP_COLUMN, *MODEL_FEATURES, TARGET_COLUMN]
+    data = gold_data.loc[~gold_data["bloqueado"], selected_columns].copy()
     data[TIMESTAMP_COLUMN] = pd.to_datetime(data[TIMESTAMP_COLUMN], errors="coerce")
     if data[TIMESTAMP_COLUMN].isna().any():
         raise ValueError("fecha_hora_inicio contiene valores no válidos.")
@@ -81,7 +82,8 @@ def temporal_train_test_split(
     test = data.loc[data[TIMESTAMP_COLUMN] >= split_timestamp].copy()
     if train.empty or test.empty:
         raise ValueError(
-            "La fecha de corte temporal debe dejar observaciones tanto para entrenamiento como para test."
+            "La fecha de corte temporal debe dejar observaciones tanto para entrenamiento "
+            "como para test."
         )
     return TemporalSplit(train=train, test=test, test_start=split_timestamp)
 
