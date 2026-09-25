@@ -130,6 +130,20 @@ Para desarrollar sin conexión se puede usar `python scripts/generate_synthetic_
 
 ---
 
+## Análisis exploratorio
+
+Después de generar el dataset Gold, ejecuta:
+
+```text
+python scripts/run_eda.py
+```
+
+El script no modifica los datos. Genera `reports/generated/eda_summary.md` y
+`reports/generated/eda_metrics.json` con controles de calidad, ocupación por
+franja y pista, efecto de la lluvia en pistas exteriores e ingresos simulados.
+
+---
+
 ## <a name="roadmap-del-proyecto"></a>🚀 Roadmap del Proyecto
 
 - [x] **Fase 1:** Definición del caso de uso e impacto de negocio (`01_ideas_producto.md`)[cite: 2]
