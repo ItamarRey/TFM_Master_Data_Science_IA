@@ -1,0 +1,17 @@
+{
+  "low": {
+    "label": "Sensibilidad baja",
+    "max_discount": 0.1,
+    "max_increase": 0.1
+  },
+  "medium": {
+    "label": "Sensibilidad media",
+    "max_discount": 0.1,
+    "max_increase": 0.1
+  },
+  "high": {
+    "label": "Sensibilidad alta",
+    "max_discount": 0.1,
+    "max_increase": 0.1
+  }
+}
