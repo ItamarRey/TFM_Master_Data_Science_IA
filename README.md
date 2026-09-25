@@ -67,6 +67,7 @@ Para validar el pipeline sin datos de un club, la simulación añade en Raw un v
 │       ├── 01_ideas_producto.md
 │       ├── 02_datos_necesarios.md
 │       └── 03_modelo_datos.md
+│   └── resultados_mvp.md  # Decisiones, métricas y resultados reproducibles
 ├── notebooks/             # Notebooks de EDA y prototipado de modelos
 ├── src/                   # Código fuente modularizado (Pipelines, ETL, ML)
 ├── .gitignore             # Filtros de exclusión para datos sensibles y temporales
@@ -183,6 +184,12 @@ La regla toma la probabilidad estimada para la tarifa actual y compara únicamen
 El efecto de modificar la tarifa se calcula con elasticidades explícitas para sensibilidad baja, media y alta. Genera `reports/generated/pricing_scenarios.md` y `reports/generated/pricing_scenarios.json`, con la comparación entre tarifa fija y dinámica esperada.
 
 El resultado es una simulación de escenarios para apoyar al gestor; no es una estimación causal del precio óptimo ni se aplica automáticamente.
+
+---
+
+## Documentación de resultados
+
+La trazabilidad completa de los datos, el EDA, el experimento de modelos, la calibración, los escenarios de precio y sus límites está en [docs/resultados_mvp.md](docs/resultados_mvp.md). Este documento recoge los resultados del escenario sintético y las decisiones técnicas que los sustentan.
 
 ---
 
