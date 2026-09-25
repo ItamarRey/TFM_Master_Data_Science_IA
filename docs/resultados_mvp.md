@@ -215,3 +215,37 @@ python scripts/simulate_pricing_scenarios.py
 
 Los informes generados se guardan en `reports/generated/` y el modelo
 seleccionado en `models/occupancy_model.joblib`.
+
+## 11. Integración del MVP
+
+La aplicación materializa el flujo analítico en una interfaz para la persona
+gestora. Su arquitectura es deliberadamente simple y separa responsabilidades:
+
+```mermaid
+flowchart LR
+    UI["Streamlit: PádelPulse"] --> API["FastAPI: /api/v1/predictions/"]
+    API --> MODEL["Modelo de ocupación"]
+    API --> RULE["Regla de precios y escenarios"]
+    MODEL --> API
+    RULE --> API
+```
+
+La pantalla **Predicciones** solicita fecha, pista, hora, tarifa actual y el
+pronóstico que estaría disponible 48 horas antes. FastAPI convierte esos datos
+en las mismas variables empleadas durante el entrenamiento, carga el artefacto
+de regresión logística y devuelve:
+
+- probabilidad estimada de ocupación con la tarifa actual;
+- tarifa sugerida, variación porcentual y comparación de candidatas;
+- ingreso esperado por turno en cada alternativa;
+- explicación de los factores considerados y una advertencia de uso.
+
+Las pantallas **Histórico** y **Escenarios** leen, respectivamente, los
+indicadores del EDA y la comparación agregada de precios generados por los
+scripts reproducibles. La interfaz etiqueta todos los resultados como
+sintéticos y la opción de aplicar tarifa solo registra una acción simulada.
+No existe automatización de cambios comerciales ni de reservas.
+
+Para ejecutar el recorrido completo se generan los datos, EDA, modelo y
+escenarios en ese orden, y se inician `uvicorn backend.app.main:app --reload`
+y `streamlit run frontend/streamlit_app.py` en terminales separadas.
