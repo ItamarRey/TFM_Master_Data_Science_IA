@@ -170,6 +170,22 @@ La comparación mide capacidad predictiva; no identifica de forma causal el efec
 
 ---
 
+## Escenarios de precios
+
+Después de entrenar el modelo, ejecuta:
+
+```text
+python scripts/simulate_pricing_scenarios.py
+```
+
+La regla toma la probabilidad estimada para la tarifa actual y compara únicamente cinco opciones: −10 %, −5 %, mantener, +5 % y +10 %, respetando los límites configurados. Solo contempla descuentos ante demanda baja, aumentos ante demanda alta y mantener el precio ante demanda intermedia.
+
+El efecto de modificar la tarifa se calcula con elasticidades explícitas para sensibilidad baja, media y alta. Genera `reports/generated/pricing_scenarios.md` y `reports/generated/pricing_scenarios.json`, con la comparación entre tarifa fija y dinámica esperada.
+
+El resultado es una simulación de escenarios para apoyar al gestor; no es una estimación causal del precio óptimo ni se aplica automáticamente.
+
+---
+
 ## <a name="roadmap-del-proyecto"></a>🚀 Roadmap del Proyecto
 
 - [x] **Fase 1:** Definición del caso de uso e impacto de negocio (`01_ideas_producto.md`)[cite: 2]
