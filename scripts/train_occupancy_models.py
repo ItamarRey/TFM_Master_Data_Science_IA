@@ -58,7 +58,9 @@ def main() -> None:
     (models_dir / "occupancy_model_metadata.json").write_text(
         json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-    result.test_predictions.to_parquet(reports_dir / "occupancy_test_predictions.parquet", index=False)
+    result.test_predictions.to_parquet(
+        reports_dir / "occupancy_test_predictions.parquet", index=False
+    )
     _write_markdown_report(metadata, len(split.train), len(split.test), reports_dir)
 
     print(f"Entrenamiento: {len(split.train):,} turnos | Test: {len(split.test):,} turnos")
@@ -80,8 +82,10 @@ def _write_markdown_report(
         f"- Entrenamiento: **{train_rows:,}** turnos anteriores a {metadata['test_start'][:10]}.",
         f"- Test temporal: **{test_rows:,}** turnos posteriores o iguales a esa fecha.",
         "- Target: `ocupado_final`; se excluyen los turnos bloqueados.",
-        "- Entradas: variables conocidas 48 h antes. No se usan cancelaciones, ingresos, estados finales ni meteorología observada.",
-        "- La selección se realiza por menor Brier score, porque el producto necesita probabilidades bien calibradas.",
+        "- Entradas: variables conocidas 48 h antes. No se usan cancelaciones, ingresos, "
+        "estados finales ni meteorología observada.",
+        "- La selección se realiza por menor Brier score, porque el producto necesita "
+        "probabilidades bien calibradas.",
         "",
         "## Resultados en test",
         "",
@@ -100,7 +104,9 @@ def _write_markdown_report(
             "",
             "## Modelo seleccionado",
             "",
-            f"`{metadata['selected_model']}`. Los resultados se refieren exclusivamente al escenario sintético configurado y no prueban impacto económico en un club real.",
+            f"`{metadata['selected_model']}`. Los resultados se refieren exclusivamente "
+            "al escenario sintético configurado y no prueban impacto económico en un "
+            "club real.",
         ]
     )
     (output_dir / "model_comparison.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
