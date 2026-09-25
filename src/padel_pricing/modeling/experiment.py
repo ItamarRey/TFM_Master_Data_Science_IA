@@ -45,7 +45,9 @@ class ExperimentResult:
     test_predictions: pd.DataFrame
 
 
-def run_experiment(train_data: pd.DataFrame, test_data: pd.DataFrame, seed: int) -> ExperimentResult:
+def run_experiment(
+    train_data: pd.DataFrame, test_data: pd.DataFrame, seed: int
+) -> ExperimentResult:
     """Compara baseline histórico, logística y boosting sobre un test posterior."""
     x_train, y_train = split_features_target(train_data)
     x_test, y_test = split_features_target(test_data)
@@ -67,7 +69,9 @@ def run_experiment(train_data: pd.DataFrame, test_data: pd.DataFrame, seed: int)
     return ExperimentResult(models=models, metrics=metrics, test_predictions=audit)
 
 
-def historical_baseline_probabilities(train_data: pd.DataFrame, test_data: pd.DataFrame) -> np.ndarray:
+def historical_baseline_probabilities(
+    train_data: pd.DataFrame, test_data: pd.DataFrame
+) -> np.ndarray:
     """Estima ocupación por segmento usando únicamente el histórico de entrenamiento."""
     global_rate = float(train_data[TARGET_COLUMN].mean())
     grouped = (
@@ -91,7 +95,9 @@ def build_logistic_model() -> Pipeline:
             ),
             (
                 "numeric",
-                Pipeline([("imputer", SimpleImputer(strategy="median")), ("scale", StandardScaler())]),
+                Pipeline(
+                    [("imputer", SimpleImputer(strategy="median")), ("scale", StandardScaler())]
+                ),
                 NUMERIC_FEATURES,
             ),
         ]
@@ -144,7 +150,9 @@ def evaluate_probabilities(y_true: pd.Series, probabilities: np.ndarray) -> dict
         "brier_score": round(float(brier_score_loss(y_true, values)), 4),
         "log_loss": round(float(log_loss(y_true, values)), 4),
         "accuracy_at_0_5": round(float(accuracy_score(y_true, predicted_class)), 4),
-        "precision_at_0_5": round(float(precision_score(y_true, predicted_class, zero_division=0)), 4),
+        "precision_at_0_5": round(
+            float(precision_score(y_true, predicted_class, zero_division=0)), 4
+        ),
         "recall_at_0_5": round(float(recall_score(y_true, predicted_class, zero_division=0)), 4),
         "f1_at_0_5": round(float(f1_score(y_true, predicted_class, zero_division=0)), 4),
     }
