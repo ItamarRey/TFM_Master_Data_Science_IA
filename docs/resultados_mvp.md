@@ -146,12 +146,17 @@ La predicción y el precio se mantienen deliberadamente separados. El modelo
 estima la ocupación para la tarifa actual; una regla de negocio compara tarifas
 candidatas y usa elasticidades explícitas para proyectar un escenario.
 
-La regla evalúa únicamente −10 %, −5 %, mantener tarifa, +5 % y +10 %, dentro
-de un rango configurado de 8 € a 20 €. Además:
+La regla compara −10 %, −5 %, mantener tarifa, +5 % y +10 %, dentro de un
+rango configurado de 8 € a 20 €. Solo puede seleccionar las alternativas que
+permite el nivel de demanda:
 
 - con probabilidad baja (menor de 35 %) solo permite mantener o descontar;
 - con probabilidad alta (mayor de 65 %) solo permite mantener o incrementar;
 - con demanda intermedia mantiene la tarifa.
+
+La interfaz muestra las cinco alternativas para hacer visible cómo variaría la
+ocupación en el escenario. Las alternativas no permitidas aparecen solo como
+comparación visual; nunca se seleccionan ni se presentan como una recomendación.
 
 Las elasticidades de sensibilidad baja, media y alta son supuestos de
 configuración. No se estiman de forma causal a partir de los datos simulados.
@@ -239,6 +244,12 @@ de regresión logística y devuelve:
 - tarifa sugerida, variación porcentual y comparación de candidatas;
 - ingreso esperado por turno en cada alternativa;
 - explicación de los factores considerados y una advertencia de uso.
+
+El ingreso esperado por turno se interpreta como `probabilidad simulada ×
+tarifa`, es decir, una media de muchos turnos comparables, no como un ingreso
+garantizado de una reserva. La pantalla separa esta métrica de la curva de
+ocupación por precio para que la persona gestora pueda entender el intercambio
+entre llenar una hora valle y conservar el ingreso esperado.
 
 Las pantallas **Histórico** y **Escenarios** leen, respectivamente, los
 indicadores del EDA y la comparación agregada de precios generados por los
