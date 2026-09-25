@@ -59,3 +59,12 @@ def test_temporal_split_and_baseline_only_use_the_past() -> None:
     assert len(split.train) == 2
     assert len(split.test) == 1
     assert probabilities.tolist() == [0.5]
+
+
+def test_prediction_time_features_are_available_without_outcomes() -> None:
+    prepared = prepare_modeling_data(_gold_like_data())
+
+    first_row = prepared.iloc[0]
+    assert first_row["hora_inicio"] == 18
+    assert first_row["es_hora_punta"]
+    assert first_row["precipitacion_exterior"] == 0.0
