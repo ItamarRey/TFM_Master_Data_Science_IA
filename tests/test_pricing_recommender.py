@@ -55,3 +55,5 @@ def test_mid_demand_keeps_the_current_price() -> None:
 
     assert recommendation.suggested_price_eur == 12.0
     assert recommendation.variation_pct == 0.0
+    assert len(recommendation.candidates) == 5
+    assert sum(item.is_allowed for item in recommendation.candidates) == 1
