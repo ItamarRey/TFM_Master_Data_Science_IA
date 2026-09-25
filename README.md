@@ -157,9 +157,9 @@ Tras generar Gold, ejecuta:
 python scripts/train_occupancy_models.py
 ```
 
-El experimento excluye turnos bloqueados y usa solo variables disponibles 48 h antes: calendario, pista, tarifa publicada y pronóstico meteorológico. Reserva el segundo año como test temporal, por lo que nunca usa datos posteriores para entrenar.
+El experimento excluye turnos bloqueados y usa solo variables disponibles 48 h antes: calendario, hora exacta, pista, tarifa publicada y pronóstico meteorológico. Incluye interacciones entre el pronóstico y las pistas exteriores. Reserva el segundo año como test temporal, por lo que nunca usa datos posteriores para entrenar.
 
-Compara un baseline histórico por segmento, una regresión logística y un modelo de gradient boosting. El modelo desplegable se selecciona entre los modelos predictivos por menor Brier score, una métrica de calidad de probabilidades. Genera:
+Compara un baseline histórico por segmento, una regresión logística y un modelo de gradient boosting. La regularización de la logística se ajusta con validación temporal interna. El modelo desplegable se selecciona entre los modelos predictivos por menor Brier score, una métrica de calidad de probabilidades. El informe añade una tabla de calibración para comprobar que las probabilidades son coherentes. Genera:
 
 - `models/occupancy_model.joblib`;
 - `models/occupancy_model_metadata.json`;
