@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
@@ -60,7 +61,7 @@ def predict_turn(request: PredictionRequest) -> dict[str, Any]:
         "simulated_occupancy_probability": recommendation.simulated_occupancy_probability,
         "expected_revenue_current": recommendation.expected_revenue_current_eur,
         "expected_revenue_suggested": recommendation.expected_revenue_suggested_eur,
-        "candidates": [candidate.__dict__ for candidate in recommendation.candidates],
+        "candidates": [asdict(candidate) for candidate in recommendation.candidates],
         "explanation": _build_explanation(request, probability, recommendation.explanation),
         "warning": "Datos sintéticos · La recomendación es un escenario y requiere revisión.",
     }
