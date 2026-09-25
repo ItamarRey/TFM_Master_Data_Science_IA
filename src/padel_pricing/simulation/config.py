@@ -25,6 +25,18 @@ class WeatherConfig:
 
 
 @dataclass(frozen=True)
+class DataQualityConfig:
+    """Tasas de incidencias sintéticas usadas para probar la capa Silver."""
+
+    inject_controlled_issues: bool
+    duplicate_rate: float
+    date_format_issue_rate: float
+    price_format_issue_rate: float
+    category_format_issue_rate: float
+    forecast_missing_rate: float
+
+
+@dataclass(frozen=True)
 class SimulationConfig:
     start_date: date
     end_date: date
@@ -40,6 +52,7 @@ class SimulationConfig:
     no_show_rate: float
     maintenance_block_rate: float
     tournament_block_rate: float
+    data_quality: DataQualityConfig
 
     @property
     def expected_slots(self) -> int:
@@ -53,6 +66,7 @@ def load_simulation_config(path: Path) -> SimulationConfig:
     weather = payload["weather"]
     occupancy = payload["occupancy"]
     operational = payload["operational"]
+    quality = payload["data_quality"]
 
     config = SimulationConfig(
         start_date=date.fromisoformat(payload["start_date"]),
@@ -77,6 +91,14 @@ def load_simulation_config(path: Path) -> SimulationConfig:
         no_show_rate=float(occupancy["no_show_rate"]),
         maintenance_block_rate=float(operational["maintenance_block_rate"]),
         tournament_block_rate=float(operational["tournament_block_rate"]),
+        data_quality=DataQualityConfig(
+            inject_controlled_issues=bool(quality["inject_controlled_issues"]),
+            duplicate_rate=float(quality["duplicate_rate"]),
+            date_format_issue_rate=float(quality["date_format_issue_rate"]),
+            price_format_issue_rate=float(quality["price_format_issue_rate"]),
+            category_format_issue_rate=float(quality["category_format_issue_rate"]),
+            forecast_missing_rate=float(quality["forecast_missing_rate"]),
+        ),
     )
     if config.end_date < config.start_date:
         raise ValueError("end_date debe ser igual o posterior a start_date")
@@ -84,4 +106,13 @@ def load_simulation_config(path: Path) -> SimulationConfig:
         raise ValueError("weather.source debe ser 'open-meteo' o 'synthetic'")
     if config.price_sensitivity not in {"low", "medium", "high"}:
         raise ValueError("price_sensitivity debe ser low, medium o high")
+    rates = (
+        config.data_quality.duplicate_rate,
+        config.data_quality.date_format_issue_rate,
+        config.data_quality.price_format_issue_rate,
+        config.data_quality.category_format_issue_rate,
+        config.data_quality.forecast_missing_rate,
+    )
+    if any(not 0 <= rate < 1 for rate in rates):
+        raise ValueError("Las tasas de calidad deben estar entre 0 (incluido) y 1 (excluido)")
     return config
