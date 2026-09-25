@@ -11,7 +11,9 @@ from padel_pricing.modeling.experiment import historical_baseline_probabilities
 def _gold_like_data() -> pd.DataFrame:
     rows = []
     for index, timestamp in enumerate(
-        pd.to_datetime(["2024-01-01 18:00", "2024-01-02 18:00", "2024-01-03 18:00", "2024-01-04 18:00"])
+        pd.to_datetime(
+            ["2024-01-01 18:00", "2024-01-02 18:00", "2024-01-03 18:00", "2024-01-04 18:00"]
+        )
     ):
         rows.append(
             {
