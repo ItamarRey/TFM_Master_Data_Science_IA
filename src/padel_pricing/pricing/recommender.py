@@ -30,6 +30,7 @@ class PriceCandidate:
     variation_pct: float
     simulated_occupancy_probability: float
     simulated_expected_revenue_eur: float
+    is_allowed: bool
 
 
 @dataclass(frozen=True)
@@ -103,16 +104,18 @@ def recommend_price(
             variation=variation,
             elasticity=scenario.elasticity,
             policy=policy,
+            is_allowed=variation in eligible_variations,
         )
-        for variation in eligible_variations
+        for variation in policy.candidate_variations
     )
     unique_candidates = _unique_candidates(candidates)
+    allowed_candidates = tuple(candidate for candidate in unique_candidates if candidate.is_allowed)
     current_candidate = next(
         candidate for candidate in unique_candidates if candidate.variation_pct == 0.0
     )
     # En caso de empate se conserva el precio actual para evitar cambios sin beneficio esperado.
     selected = max(
-        unique_candidates,
+        allowed_candidates,
         key=lambda candidate: (
             candidate.simulated_expected_revenue_eur,
             candidate.price_eur == current_price_eur,
@@ -140,6 +143,7 @@ def _build_candidate(
     variation: float,
     elasticity: float,
     policy: PricingPolicy,
+    is_allowed: bool,
 ) -> PriceCandidate:
     candidate_price = min(
         max(round(current_price_eur * (1 + variation), 2), policy.minimum_price_eur),
@@ -157,6 +161,7 @@ def _build_candidate(
         variation_pct=actual_variation,
         simulated_occupancy_probability=probability,
         simulated_expected_revenue_eur=round(candidate_price * probability, 4),
+        is_allowed=is_allowed,
     )
 
 
@@ -170,7 +175,9 @@ def _scenario_probability(
 def _unique_candidates(candidates: tuple[PriceCandidate, ...]) -> tuple[PriceCandidate, ...]:
     unique: dict[float, PriceCandidate] = {}
     for candidate in candidates:
-        unique[candidate.price_eur] = candidate
+        previous = unique.get(candidate.price_eur)
+        if previous is None or candidate.is_allowed:
+            unique[candidate.price_eur] = candidate
     return tuple(sorted(unique.values(), key=lambda candidate: candidate.price_eur))
 
 
