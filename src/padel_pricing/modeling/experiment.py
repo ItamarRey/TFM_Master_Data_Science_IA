@@ -21,9 +21,11 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
+from sklearn.model_selection import TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+from padel_pricing.modeling.diagnostics import build_diagnostics
 from padel_pricing.modeling.dataset import (
     CATEGORICAL_FEATURES,
     MODEL_FEATURES,
@@ -43,6 +45,8 @@ class ExperimentResult:
     models: dict[str, Pipeline]
     metrics: dict[str, dict[str, float]]
     test_predictions: pd.DataFrame
+    diagnostics: dict[str, dict[str, list[dict[str, object]]]]
+    tuning: dict[str, object]
 
 
 def run_experiment(
@@ -54,8 +58,9 @@ def run_experiment(
     predictions: dict[str, np.ndarray] = {
         "baseline_historico": historical_baseline_probabilities(train_data, test_data)
     }
+    best_c, tuning = select_logistic_regularization(x_train, y_train)
     models = {
-        "regresion_logistica": build_logistic_model(),
+        "regresion_logistica": build_logistic_model(c=best_c),
         "gradient_boosting": build_gradient_boosting_model(seed),
     }
     for name, model in models.items():
@@ -66,7 +71,16 @@ def run_experiment(
     audit = test_data[["fecha_hora_inicio", TARGET_COLUMN]].copy()
     for name, values in predictions.items():
         audit[f"probabilidad_{name}"] = values
-    return ExperimentResult(models=models, metrics=metrics, test_predictions=audit)
+    diagnostics = {
+        name: build_diagnostics(test_data, values) for name, values in predictions.items()
+    }
+    return ExperimentResult(
+        models=models,
+        metrics=metrics,
+        test_predictions=audit,
+        diagnostics=diagnostics,
+        tuning=tuning,
+    )
 
 
 def historical_baseline_probabilities(
@@ -84,7 +98,7 @@ def historical_baseline_probabilities(
     return joined["probability"].fillna(global_rate).to_numpy(dtype=float)
 
 
-def build_logistic_model() -> Pipeline:
+def build_logistic_model(c: float = 0.1) -> Pipeline:
     """Modelo lineal explicable con codificación y escalado reproducibles."""
     preprocessor = ColumnTransformer(
         transformers=[
@@ -105,7 +119,7 @@ def build_logistic_model() -> Pipeline:
     return Pipeline(
         [
             ("preprocess", preprocessor),
-            ("classifier", LogisticRegression(max_iter=1_000, random_state=42)),
+            ("classifier", LogisticRegression(C=c, max_iter=1_000, random_state=42)),
         ]
     )
 
@@ -164,6 +178,30 @@ def select_deployable_model(metrics: dict[str, dict[str, float]]) -> str:
     return min(candidate_names, key=lambda name: metrics[name]["brier_score"])
 
 
+def select_logistic_regularization(
+    x_train: pd.DataFrame, y_train: pd.Series
+) -> tuple[float, dict[str, object]]:
+    """Selecciona regularización con validación temporal interna, sin usar el test final."""
+    candidates = (0.01, 0.03, 0.1, 0.3, 1.0)
+    splitter = TimeSeriesSplit(n_splits=3)
+    average_brier: dict[float, float] = {}
+    for c in candidates:
+        scores = []
+        for train_index, validation_index in splitter.split(x_train):
+            model = build_logistic_model(c=c)
+            model.fit(x_train.iloc[train_index], y_train.iloc[train_index])
+            probabilities = model.predict_proba(x_train.iloc[validation_index])[:, 1]
+            scores.append(brier_score_loss(y_train.iloc[validation_index], probabilities))
+        average_brier[c] = float(np.mean(scores))
+    selected_c = min(average_brier, key=average_brier.get)
+    return selected_c, {
+        "method": "TimeSeriesSplit con tres particiones",
+        "selection_metric": "brier_score",
+        "selected_c": selected_c,
+        "mean_brier_by_c": {str(c): round(score, 4) for c, score in average_brier.items()},
+    }
+
+
 def experiment_metadata(result: ExperimentResult, test_start: pd.Timestamp) -> dict[str, Any]:
     """Devuelve metadatos serializables para el artefacto del modelo."""
     return {
@@ -172,5 +210,7 @@ def experiment_metadata(result: ExperimentResult, test_start: pd.Timestamp) -> d
         "test_start": test_start.isoformat(),
         "selection_metric": "brier_score",
         "metrics": result.metrics,
+        "diagnostics": result.diagnostics,
+        "tuning": result.tuning,
         "selected_model": select_deployable_model(result.metrics),
     }
