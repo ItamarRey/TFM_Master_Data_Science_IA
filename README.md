@@ -103,10 +103,30 @@ cd tu-repositorio
 
 ### 2. Crear entorno virtual e instalar dependencias
 ```text
-python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
-pip install -r requirements.txt
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -e ".[dev]"
 ```
+
+---
+
+## Generar el dataset sintético
+
+El primer dataset se genera desde la raíz del repositorio:
+
+```text
+python scripts/generate_synthetic_data.py
+```
+
+El comando descarga meteorología histórica pública para la ubicación configurada y crea:
+
+- `data/raw/weather_hourly.json`;
+- `data/processed/weather_hourly.parquet`;
+- `data/gold/gold_slots_pistas.parquet`;
+- `data/gold/gold_slots_pistas_metadata.json`.
+
+Para desarrollar sin conexión se puede usar `python scripts/generate_synthetic_data.py --weather-source synthetic`. Este modo se identifica como sintético en los metadatos y no sustituye la ejecución final con meteorología pública.
 
 ---
 
