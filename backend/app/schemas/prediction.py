@@ -22,6 +22,7 @@ class PriceCandidateResponse(BaseModel):
     variation_pct: float
     simulated_occupancy_probability: float
     simulated_expected_revenue_eur: float
+    is_allowed: bool = True
 
 
 class PredictionResponse(BaseModel):
