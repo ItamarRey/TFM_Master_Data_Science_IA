@@ -1,17 +1,23 @@
 {
-  "low": {
-    "label": "Sensibilidad baja",
-    "max_discount": 0.1,
-    "max_increase": 0.1
+  "rules": {
+    "minimum_price_eur": 8.0,
+    "maximum_price_eur": 20.0,
+    "low_demand_probability_threshold": 0.35,
+    "high_demand_probability_threshold": 0.65,
+    "candidate_variations": [-0.1, -0.05, 0.0, 0.05, 0.1]
   },
-  "medium": {
-    "label": "Sensibilidad media",
-    "max_discount": 0.1,
-    "max_increase": 0.1
-  },
-  "high": {
-    "label": "Sensibilidad alta",
-    "max_discount": 0.1,
-    "max_increase": 0.1
+  "scenarios": {
+    "low": {
+      "label": "Sensibilidad baja",
+      "elasticity": 0.35
+    },
+    "medium": {
+      "label": "Sensibilidad media",
+      "elasticity": 0.75
+    },
+    "high": {
+      "label": "Sensibilidad alta",
+      "elasticity": 1.15
+    }
   }
 }
