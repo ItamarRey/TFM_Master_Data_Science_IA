@@ -17,7 +17,6 @@ from padel_pricing.modeling import (
 )
 from padel_pricing.modeling.experiment import experiment_metadata
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
