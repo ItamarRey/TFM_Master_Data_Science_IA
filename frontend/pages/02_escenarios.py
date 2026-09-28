@@ -73,7 +73,10 @@ def value_for(data: pd.DataFrame, scenario: str, column: str) -> float:
 
 def load_elasticities() -> dict[str, float]:
     payload = json.loads(PRICING_CONFIG_PATH.read_text(encoding="utf-8"))
-    return {name: float(values["elasticity"]) for name, values in payload["scenarios"].items()}
+    return {
+        name: float(values["low_demand_elasticity"])
+        for name, values in payload["scenarios"].items()
+    }
 
 
 def discount_response_pct(elasticity: float) -> float:
