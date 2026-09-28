@@ -12,7 +12,6 @@ import pandas as pd
 from padel_pricing.modeling import prepare_modeling_data, temporal_train_test_split
 from padel_pricing.pricing import load_pricing_policy, recommend_price
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -41,8 +40,7 @@ def main() -> None:
     args = parse_args()
     if not args.input.exists() or not args.model.exists():
         raise FileNotFoundError(
-            "Falta Gold o el modelo entrenado. Ejecuta antes "
-            "scripts/train_occupancy_models.py."
+            "Falta Gold o el modelo entrenado. Ejecuta antes scripts/train_occupancy_models.py."
         )
 
     policy = load_pricing_policy(PROJECT_ROOT / "config" / "pricing_scenarios.json")
@@ -61,9 +59,7 @@ def main() -> None:
     (output_dir / "pricing_scenarios.json").write_text(
         json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-    (output_dir / "pricing_scenarios.md").write_text(
-        _build_markdown(results), encoding="utf-8"
-    )
+    (output_dir / "pricing_scenarios.md").write_text(_build_markdown(results), encoding="utf-8")
     print(f"Informe: {output_dir / 'pricing_scenarios.md'}")
 
 
@@ -89,7 +85,9 @@ def _simulate_scenario(
         dynamic_revenue += recommendation.expected_revenue_suggested_eur
         fixed_occupancy += recommendation.current_occupancy_probability
         dynamic_occupancy += recommendation.simulated_occupancy_probability
-        changed_prices += int(recommendation.suggested_price_eur != recommendation.current_price_eur)
+        changed_prices += int(
+            recommendation.suggested_price_eur != recommendation.current_price_eur
+        )
 
     total_slots = len(data)
     return {
