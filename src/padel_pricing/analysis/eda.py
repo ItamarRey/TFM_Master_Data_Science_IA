@@ -8,7 +8,6 @@ from typing import Any
 
 import pandas as pd
 
-
 DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 DAY_LABELS = {
     "Monday": "Lunes",
@@ -30,8 +29,8 @@ def analyze_dataset(data: pd.DataFrame) -> dict[str, Any]:
 
     eligible = data.loc[~data["bloqueado"]].copy()
     eligible["categoria_lluvia"] = _rain_category(eligible["precipitacion_mm"])
-    eligible["dia_semana_es"] = eligible["dia_semana"].map(DAY_LABELS).fillna(
-        eligible["dia_semana"]
+    eligible["dia_semana_es"] = (
+        eligible["dia_semana"].map(DAY_LABELS).fillna(eligible["dia_semana"])
     )
 
     result = {
