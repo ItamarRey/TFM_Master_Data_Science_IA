@@ -131,6 +131,7 @@ else:
             st.metric("Cambios de tarifa", f"{selected_changes:,}")
             if st.button("Usar en Predicciones", type="primary", use_container_width=True):
                 st.session_state["prediction_preferred_scenario"] = selected
+                st.session_state["prediction_scenario"] = selected
                 st.success("Escenario seleccionado. Puedes volver a Predicciones para usarlo.")
             st.page_link(
                 "pages/01_predicciones.py",
