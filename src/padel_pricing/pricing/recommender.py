@@ -11,7 +11,8 @@ from pathlib import Path
 class PricingScenario:
     name: str
     label: str
-    elasticity: float
+    low_demand_elasticity: float
+    high_demand_elasticity: float
 
 
 @dataclass(frozen=True)
@@ -60,7 +61,8 @@ def load_pricing_policy(path: Path) -> PricingPolicy:
         name: PricingScenario(
             name=name,
             label=values["label"],
-            elasticity=float(values["elasticity"]),
+            low_demand_elasticity=float(values["low_demand_elasticity"]),
+            high_demand_elasticity=float(values["high_demand_elasticity"]),
         )
         for name, values in payload["scenarios"].items()
     }
@@ -97,12 +99,13 @@ def recommend_price(
     )
     scenario = policy.scenarios[scenario_name]
     eligible_variations = _variations_for_demand(occupancy_probability, policy)
+    elasticity = _elasticity_for_demand(occupancy_probability, scenario, policy)
     candidates = tuple(
         _build_candidate(
             current_price_eur=current_price_eur,
             current_probability=occupancy_probability,
             variation=variation,
-            elasticity=scenario.elasticity,
+            elasticity=elasticity,
             policy=policy,
             is_allowed=variation in eligible_variations,
         )
@@ -190,6 +193,22 @@ def _variations_for_demand(probability: float, policy: PricingPolicy) -> tuple[f
     return (0.0,)
 
 
+def _elasticity_for_demand(
+    probability: float, scenario: PricingScenario, policy: PricingPolicy
+) -> float:
+    """Usa una demanda más sensible en valle y más estable en horas punta.
+
+    Es un supuesto explícito del escenario sintético: un descuento tiene más
+    capacidad de activar una hora valle, mientras que una franja escasa soporta
+    mejor una subida limitada. No representa una elasticidad causal observada.
+    """
+    if probability < policy.low_demand_probability_threshold:
+        return scenario.low_demand_elasticity
+    if probability > policy.high_demand_probability_threshold:
+        return scenario.high_demand_elasticity
+    return (scenario.low_demand_elasticity + scenario.high_demand_elasticity) / 2
+
+
 def _explanation(
     selected: PriceCandidate, current: PriceCandidate, scenario: PricingScenario
 ) -> str:
@@ -216,8 +235,11 @@ def _validate_policy(policy: PricingPolicy) -> None:
         raise ValueError("candidate_variations debe incluir 0.0 para evaluar mantener la tarifa.")
     if any(abs(value) > 0.10 for value in policy.candidate_variations):
         raise ValueError("La regla no puede proponer variaciones superiores al ±10%.")
-    if not policy.scenarios or any(item.elasticity <= 0 for item in policy.scenarios.values()):
-        raise ValueError("Cada escenario debe tener una elasticidad positiva.")
+    if not policy.scenarios or any(
+        item.low_demand_elasticity <= 0 or item.high_demand_elasticity <= 0
+        for item in policy.scenarios.values()
+    ):
+        raise ValueError("Cada escenario debe tener elasticidades positivas.")
 
 
 def _validate_recommendation_inputs(
