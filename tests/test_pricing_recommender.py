@@ -2,7 +2,6 @@ from pathlib import Path
 
 from padel_pricing.pricing import load_pricing_policy, recommend_price
 
-
 POLICY = load_pricing_policy(Path("config/pricing_scenarios.json"))
 
 
@@ -16,8 +15,7 @@ def test_low_sensitivity_can_increase_price_when_demand_is_high() -> None:
 
     assert recommendation.suggested_price_eur == 13.2
     assert (
-        recommendation.expected_revenue_suggested_eur
-        > recommendation.expected_revenue_current_eur
+        recommendation.expected_revenue_suggested_eur > recommendation.expected_revenue_current_eur
     )
 
 
