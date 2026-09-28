@@ -9,7 +9,10 @@ description = "MVP de predicción de ocupación y precios dinámicos para clubes
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 dependencies = [
-    "fastapi>=0.115",
+    # FastAPI 0.141 introduces a TestClient transition that is incompatible
+    # with the test stack used by this MVP. Keep the API dependency in the
+    # stable 0.115–0.140 line until that migration is made deliberately.
+    "fastapi>=0.115,<0.141",
     "httpx>=0.27",
     "joblib>=1.3",
     "pandas>=2.2",
