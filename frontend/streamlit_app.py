@@ -1,5 +1,4 @@
 import streamlit as st
-
 from services.api_client import get_api_health
 
 st.set_page_config(page_title="PádelPulse", page_icon="🎾", layout="wide")
