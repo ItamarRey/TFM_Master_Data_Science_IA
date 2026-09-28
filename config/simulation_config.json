@@ -21,7 +21,7 @@
       "longitude": -15.4363
     },
     "occupancy": {
-      "base_price_eur": 12.0,
+      "base_price_eur": 16.0,
       "price_sensitivity": "medium",
       "cancellation_rate": 0.08,
       "no_show_rate": 0.02
