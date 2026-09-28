@@ -81,6 +81,15 @@ def discount_response_pct(elasticity: float) -> float:
     return ((0.90**-elasticity) - 1) * 100
 
 
+def next_weekday(weekday: int) -> date:
+    """Selecciona una fecha de referencia posterior a las próximas 48 h."""
+    today = date.today()
+    days_until = (weekday - today.weekday()) % 7
+    if days_until < 2:
+        days_until += 7
+    return today + timedelta(days=days_until)
+
+
 inject_dashboard_styles()
 render_sidebar("Escenarios")
 render_page_header(
@@ -157,15 +166,15 @@ else:
                 f"Con un descuento ilustrativo del 10 %, la ocupación simulada variaría {response:+.1f} %."
             )
             if st.button("Probar en Predicciones", type="primary", use_container_width=True):
-                reference_date = date.today() + timedelta(days=2)
+                peak_scenario = selected in {"low", "medium"}
                 st.session_state.update(
                     {
                         "prediction_preferred_scenario": selected,
                         "prediction_scenario": selected,
-                        "prediction_date": reference_date,
+                        "prediction_date": next_weekday(5 if peak_scenario else 0),
                         "prediction_court": "exterior_1",
-                        "prediction_start_time": "08:00",
-                        "prediction_current_price": 14.0,
+                        "prediction_start_time": "20:00" if peak_scenario else "08:00",
+                        "prediction_current_price": 21.0 if peak_scenario else 16.0,
                         "prediction_temperature": 22.0,
                         "prediction_precipitation": 0.0,
                         "prediction_wind": 15.0,
