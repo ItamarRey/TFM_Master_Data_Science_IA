@@ -45,6 +45,43 @@ def find_peak(data: pd.DataFrame, label_column: str) -> tuple[str, float]:
     return str(top[label_column]), float(top["ocupacion_pct"])
 
 
+def monthly_chart(data: pd.DataFrame) -> object:
+    """Añade un detalle temporal para no limitar el histórico a cuatro promedios."""
+    month_labels = {
+        1: "Ene",
+        2: "Feb",
+        3: "Mar",
+        4: "Abr",
+        5: "May",
+        6: "Jun",
+        7: "Jul",
+        8: "Ago",
+        9: "Sep",
+        10: "Oct",
+        11: "Nov",
+        12: "Dic",
+    }
+    chart_data = data.sort_values("mes").copy()
+    chart_data["mes_label"] = chart_data["mes"].map(month_labels)
+    figure = px.line(
+        chart_data,
+        x="mes_label",
+        y="ocupacion_pct",
+        markers=True,
+        title="Evolución mensual de la ocupación",
+        labels={"mes_label": "Mes", "ocupacion_pct": "Ocupación (%)"},
+    )
+    figure.update_traces(line={"color": "#2e6ae6", "width": 3}, marker={"size": 8})
+    figure.update_layout(
+        height=315,
+        margin={"l": 10, "r": 10, "t": 55, "b": 10},
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+        yaxis={"range": [0, 100], "gridcolor": "#e7edf6"},
+    )
+    return figure
+
+
 inject_dashboard_styles()
 render_sidebar("Histórico")
 render_page_header(
@@ -66,6 +103,7 @@ else:
     day = pd.DataFrame(analysis["occupancy_by_day"])
     court_type = pd.DataFrame(analysis["occupancy_by_court_type"])
     weather = pd.DataFrame(analysis["exterior_weather_impact"])
+    monthly = pd.DataFrame(analysis["occupancy_by_month"])
     peak_band, peak_band_occupancy = find_peak(time_band, "franja_horaria")
     peak_day, peak_day_occupancy = find_peak(day, "dia_semana_es")
 
@@ -139,6 +177,9 @@ else:
                 ),
                 use_container_width=True,
             )
+
+    with st.container(border=True):
+        st.plotly_chart(monthly_chart(monthly), use_container_width=True)
 
     st.subheader("Lecturas rápidas para el gestor")
     insights = st.columns(3)
