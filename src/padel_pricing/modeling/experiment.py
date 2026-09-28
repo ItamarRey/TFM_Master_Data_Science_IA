@@ -25,7 +25,6 @@ from sklearn.model_selection import TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from padel_pricing.modeling.diagnostics import build_diagnostics
 from padel_pricing.modeling.dataset import (
     CATEGORICAL_FEATURES,
     MODEL_FEATURES,
@@ -33,7 +32,7 @@ from padel_pricing.modeling.dataset import (
     TARGET_COLUMN,
     split_features_target,
 )
-
+from padel_pricing.modeling.diagnostics import build_diagnostics
 
 BASELINE_SEGMENT = ["franja_horaria", "es_fin_de_semana", "tipo_pista"]
 
