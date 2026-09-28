@@ -16,7 +16,6 @@ from padel_pricing.modeling.dataset import MODEL_FEATURES
 from padel_pricing.pricing import load_pricing_policy, recommend_price
 from padel_pricing.simulation.generator import PUBLIC_HOLIDAYS
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 MODEL_PATH = PROJECT_ROOT / "models" / "occupancy_model.joblib"
 PRICING_CONFIG_PATH = PROJECT_ROOT / "config" / "pricing_scenarios.json"
@@ -92,8 +91,7 @@ def build_model_input(request: PredictionRequest) -> pd.DataFrame:
         "pronostico_viento_kmh": request.forecast_wind_kmh,
         "precipitacion_exterior": request.forecast_precipitation_mm * exterior,
         "viento_exterior_exceso": max(0.0, request.forecast_wind_kmh - 18) * exterior,
-        "deficit_temperatura_exterior": max(0.0, 18 - request.forecast_temperature_c)
-        * exterior,
+        "deficit_temperatura_exterior": max(0.0, 18 - request.forecast_temperature_c) * exterior,
     }
     return pd.DataFrame([row], columns=MODEL_FEATURES)
 
