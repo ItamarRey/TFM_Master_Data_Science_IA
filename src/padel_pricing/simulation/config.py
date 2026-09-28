@@ -76,8 +76,7 @@ def load_simulation_config(path: Path) -> SimulationConfig:
         slot_duration_minutes=int(payload["slot_duration_minutes"]),
         slot_start_times=tuple(payload["slot_start_times"]),
         courts=tuple(
-            Court(court_id=item["id"], court_type=item["type"])
-            for item in payload["courts"]
+            Court(court_id=item["id"], court_type=item["type"]) for item in payload["courts"]
         ),
         weather=WeatherConfig(
             source=weather["source"],
