@@ -2,6 +2,7 @@ from datetime import date, timedelta
 
 import plotly.graph_objects as go
 import streamlit as st
+from components.dashboard_ui import render_sidebar
 from services.api_client import create_decision, create_prediction
 
 COURTS = {
@@ -157,16 +158,31 @@ def save_manager_decision(
         st.error(f"No se pudo registrar la decisión: {exc}")
 
 
-def show_sidebar() -> None:
-    with st.sidebar:
-        st.markdown('<div class="brand">🎾 PádelPulse</div>', unsafe_allow_html=True)
-        st.markdown('<p class="brand-subtitle">Revenue management</p>', unsafe_allow_html=True)
-        st.divider()
-        st.page_link("pages/01_predicciones.py", label="Predicciones", icon="🎯")
-        st.page_link("pages/02_escenarios.py", label="Escenarios", icon="💶")
-        st.page_link("pages/03_historico.py", label="Histórico", icon="📊")
-        st.divider()
-        st.caption("Gestión del club\n\nModo simulación")
+def run_reference_prediction() -> None:
+    """Carga el ejemplo enviado desde Escenarios antes de pintar los widgets."""
+    if not st.session_state.pop("prediction_autorun", False):
+        return
+    selected_date = st.session_state.get("prediction_date", date.today() + timedelta(days=2))
+    if isinstance(selected_date, str):
+        selected_date = date.fromisoformat(selected_date)
+    payload = {
+        "date": selected_date.isoformat(),
+        "court_id": st.session_state.get("prediction_court", "exterior_1"),
+        "start_time": st.session_state.get("prediction_start_time", "08:00"),
+        "current_price": st.session_state.get("prediction_current_price", 14.0),
+        "scenario": st.session_state.get("prediction_scenario", "medium"),
+        "forecast_temperature_c": st.session_state.get("prediction_temperature", 22.0),
+        "forecast_precipitation_mm": st.session_state.get("prediction_precipitation", 0.0),
+        "forecast_wind_kmh": st.session_state.get("prediction_wind", 15.0),
+    }
+    try:
+        st.session_state["prediction_result"] = create_prediction(payload)
+        st.session_state["prediction_inputs"] = payload
+        st.session_state["reference_prediction_message"] = (
+            "Hipótesis cargada en un turno de referencia. Puedes ajustar cualquier dato y recalcular."
+        )
+    except Exception as exc:
+        st.session_state["reference_prediction_error"] = str(exc)
 
 
 def build_price_figure(candidates: list[dict[str, object]], suggested_price: float) -> go.Figure:
@@ -213,7 +229,8 @@ def build_price_figure(candidates: list[dict[str, object]], suggested_price: flo
 
 
 inject_styles()
-show_sidebar()
+render_sidebar("Predicciones")
+run_reference_prediction()
 
 header_left, header_right = st.columns([4, 1.35])
 with header_left:
@@ -228,6 +245,11 @@ with header_right:
         unsafe_allow_html=True,
     )
 
+if message := st.session_state.pop("reference_prediction_message", None):
+    st.success(message)
+if error := st.session_state.pop("reference_prediction_error", None):
+    st.error(f"No se pudo cargar el turno de referencia: {error}")
+
 left, center, right = st.columns([1.1, 2.05, 1.15], gap="large")
 
 with left:
@@ -241,16 +263,27 @@ with left:
         )
         with st.form("prediction_form"):
             st.markdown("**Datos del turno**")
-            selected_date = st.date_input("Fecha", value=date.today() + timedelta(days=2))
-            court_id = st.selectbox(
-                "Pista a gestionar", options=list(COURTS), format_func=COURTS.get
+            selected_date = st.date_input(
+                "Fecha", value=date.today() + timedelta(days=2), key="prediction_date"
             )
-            start_time = st.selectbox("Hora de inicio", SLOTS, index=7)
-            current_price = st.number_input("Tarifa vigente (€)", 8.0, 20.0, 14.0, 0.5)
+            court_id = st.selectbox(
+                "Pista a gestionar",
+                options=list(COURTS),
+                format_func=COURTS.get,
+                key="prediction_court",
+            )
+            start_time = st.selectbox("Hora de inicio", SLOTS, index=7, key="prediction_start_time")
+            current_price = st.number_input(
+                "Tarifa vigente (€)", 8.0, 20.0, 14.0, 0.5, key="prediction_current_price"
+            )
             st.markdown("**Previsión meteorológica (disponible 48 h antes)**")
-            temperature = st.slider("Temperatura prevista (°C)", 10.0, 35.0, 22.0, 0.5)
-            precipitation = st.slider("Lluvia prevista (mm)", 0.0, 10.0, 0.0, 0.1)
-            wind = st.slider("Viento previsto (km/h)", 0.0, 50.0, 15.0, 1.0)
+            temperature = st.slider(
+                "Temperatura prevista (°C)", 10.0, 35.0, 22.0, 0.5, key="prediction_temperature"
+            )
+            precipitation = st.slider(
+                "Lluvia prevista (mm)", 0.0, 10.0, 0.0, 0.1, key="prediction_precipitation"
+            )
+            wind = st.slider("Viento previsto (km/h)", 0.0, 50.0, 15.0, 1.0, key="prediction_wind")
             preferred_scenario = st.session_state.get("prediction_preferred_scenario", "medium")
             scenario = st.selectbox(
                 "Respuesta esperada al precio",
