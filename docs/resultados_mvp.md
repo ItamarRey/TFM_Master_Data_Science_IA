@@ -175,9 +175,12 @@ La interfaz muestra las cinco alternativas para hacer visible cómo variaría la
 ocupación en el escenario. Las alternativas no permitidas aparecen solo como
 comparación visual; nunca se seleccionan ni se presentan como una recomendación.
 
-Las elasticidades de sensibilidad baja, media y alta son supuestos de
-configuración. No se estiman de forma causal a partir de los datos simulados.
-La decisión final corresponde al gestor y nunca modifica una reserva existente.
+Cada sensibilidad define dos respuestas: la demanda baja es más sensible al
+descuento (elasticidades 1,02; 1,20 y 1,50) y la demanda alta tolera mejor una
+subida limitada (0,30; 0,55 y 0,80). Esta asimetría representa el supuesto de
+que una hora valle requiere un estímulo mayor que una hora punta escasa. No se
+estima de forma causal a partir de los datos simulados. La decisión final
+corresponde al gestor y nunca modifica una reserva existente.
 
 ## 7. Resultados de escenarios de precio
 
@@ -187,20 +190,19 @@ probabilidades y `tarifa × probabilidad`; no son resultados reales.
 
 | Escenario | Tarifas modificadas | Reservas esperadas fijas | Reservas esperadas dinámicas | Ocupación esperada dinámica | Ingreso fijo esperado | Ingreso dinámico esperado | Diferencia |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Sensibilidad baja | 1.928 | 6.888,51 | 6.853,60 | 31,61 % | 127.290,02 € | 128.678,65 € | +1.388,63 € |
-| Sensibilidad media | 1.928 | 6.888,51 | 6.815,10 | 31,43 % | 127.290,02 € | 127.813,92 € | +523,90 € |
-| Sensibilidad alta | 11.095 | 6.888,51 | 7.220,66 | 33,30 % | 127.290,02 € | 128.003,77 € | +713,75 € |
+| Sensibilidad baja | 13.021 | 6.888,51 | 7.151,07 | 32,98 % | 127.290,02 € | 128.883,61 € | +1.593,59 € |
+| Sensibilidad media | 13.022 | 6.888,51 | 7.181,69 | 33,12 % | 127.290,02 € | 129.196,40 € | +1.906,38 € |
+| Sensibilidad alta | 13.022 | 6.888,51 | 7.251,88 | 33,44 % | 127.290,02 € | 130.131,87 € | +2.841,85 € |
 
 Interpretación:
 
-- En sensibilidad baja y media, 1.928 turnos de demanda alta reciben un aumento
-  limitado. El ingreso esperado aumenta, aunque se reducen ligeramente las
-  reservas esperadas porque el precio es mayor.
-- En sensibilidad alta, 11.095 turnos de demanda baja reciben descuentos. Las
-  reservas esperadas aumentan en aproximadamente 332 y el ingreso esperado en
-  713,75 €.
-- La regla ya muestra los tres comportamientos del producto: descuento en valle,
-  mantenimiento en demanda intermedia e incremento en demanda alta.
+- Los tres escenarios aplican descuentos en demanda baja y subidas limitadas
+  en demanda alta; los turnos de demanda intermedia mantienen su tarifa.
+- Al aumentar la sensibilidad configurada, el descuento genera más reservas
+  esperadas. La sensibilidad alta incrementa aproximadamente 363 reservas y
+  2.841,85 € de ingreso esperado frente a tarifa fija.
+- La diferencia entre escenarios expresa únicamente el supuesto de respuesta
+  al precio: no demuestra que un club real alcance esos resultados.
 
 Este último resultado es una consecuencia de la elasticidad asumida. No permite
 afirmar que un club real obtendría ese incremento.
