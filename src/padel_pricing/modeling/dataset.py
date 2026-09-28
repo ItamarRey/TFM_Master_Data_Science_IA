@@ -6,7 +6,6 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-
 TARGET_COLUMN = "ocupado_final"
 TIMESTAMP_COLUMN = "fecha_hora_inicio"
 CATEGORICAL_FEATURES = [
@@ -72,7 +71,6 @@ def prepare_modeling_data(gold_data: pd.DataFrame) -> pd.DataFrame:
     if missing_columns:
         raise ValueError(f"Faltan columnas para modelado: {sorted(missing_columns)}")
 
-    selected_columns = [TIMESTAMP_COLUMN, *MODEL_FEATURES, TARGET_COLUMN]
     source_columns = [TIMESTAMP_COLUMN, "bloqueado", TARGET_COLUMN, *SOURCE_FEATURES]
     data = gold_data.loc[~gold_data["bloqueado"], source_columns].copy()
     data[TIMESTAMP_COLUMN] = pd.to_datetime(data[TIMESTAMP_COLUMN], errors="coerce")
@@ -81,13 +79,15 @@ def prepare_modeling_data(gold_data: pd.DataFrame) -> pd.DataFrame:
     data = _add_prediction_time_features(data)
     if data[MODEL_FEATURES].isna().any().any():
         raise ValueError("Las variables de entrada no pueden contener nulos tras Silver.")
-    if not set(data[TARGET_COLUMN].unique()).issubset({0, 1, False, True}):
+    if not set(data[TARGET_COLUMN].unique()).issubset({0, 1}):
         raise ValueError("ocupado_final debe ser una variable binaria.")
 
     data[TARGET_COLUMN] = data[TARGET_COLUMN].astype(int)
-    return data[[TIMESTAMP_COLUMN, *MODEL_FEATURES, TARGET_COLUMN]].sort_values(
-        TIMESTAMP_COLUMN
-    ).reset_index(drop=True)
+    return (
+        data[[TIMESTAMP_COLUMN, *MODEL_FEATURES, TARGET_COLUMN]]
+        .sort_values(TIMESTAMP_COLUMN)
+        .reset_index(drop=True)
+    )
 
 
 def temporal_train_test_split(
@@ -125,11 +125,10 @@ def _add_prediction_time_features(data: pd.DataFrame) -> pd.DataFrame:
     result["es_hora_punta"] = result["hora_inicio"].isin([18, 20])
     exterior = (result["tipo_pista"] == "exterior").astype(int)
     result["precipitacion_exterior"] = result["pronostico_precipitacion_mm"] * exterior
-    result["viento_exterior_exceso"] = (
-        (result["pronostico_viento_kmh"] - 18).clip(lower=0) * exterior
-    )
-    result["deficit_temperatura_exterior"] = (
-        (18 - result["pronostico_temperatura_c"]).clip(lower=0) * exterior
-    )
+    result["viento_exterior_exceso"] = (result["pronostico_viento_kmh"] - 18).clip(
+        lower=0
+    ) * exterior
+    result["deficit_temperatura_exterior"] = (18 - result["pronostico_temperatura_c"]).clip(
+        lower=0
+    ) * exterior
     return result
-
