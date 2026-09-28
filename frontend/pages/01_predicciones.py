@@ -257,6 +257,7 @@ with left:
                 list(SCENARIOS),
                 format_func=SCENARIOS.get,
                 index=list(SCENARIOS).index(preferred_scenario),
+                key="prediction_scenario",
             )
             submitted = st.form_submit_button(
                 "Actualizar predicción", type="primary", use_container_width=True
