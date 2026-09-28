@@ -1,4 +1,5 @@
 import json
+from datetime import date, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -14,6 +15,7 @@ from components.dashboard_ui import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 REPORT_PATH = PROJECT_ROOT / "reports" / "generated" / "pricing_scenarios.json"
+PRICING_CONFIG_PATH = PROJECT_ROOT / "config" / "pricing_scenarios.json"
 SCENARIO_LABELS = {
     "low": "Sensibilidad baja",
     "medium": "Sensibilidad media",
@@ -27,41 +29,56 @@ SCENARIO_DESCRIPTIONS = {
 
 
 def scenario_figure(data: pd.DataFrame) -> go.Figure:
+    """Muestra el impacto neto para que las diferencias no queden ocultas."""
     labels = [SCENARIO_LABELS.get(value, value) for value in data["scenario"]]
+    differences = data["expected_revenue_difference_eur"]
+    colors = ["#108865" if value > 0 else "#b9c8e0" for value in differences]
     figure = go.Figure()
     figure.add_trace(
         go.Bar(
-            name="Tarifa fija",
+            name="Diferencia frente a tarifa fija",
             x=labels,
-            y=data["expected_revenue_fixed_eur"],
-            marker_color="#b9c8e0",
-            hovertemplate="%{x}<br>Tarifa fija: %{y:.2f} €<extra></extra>",
-        )
-    )
-    figure.add_trace(
-        go.Bar(
-            name="Regla dinámica",
-            x=labels,
-            y=data["expected_revenue_dynamic_eur"],
-            marker_color="#2e6ae6",
-            hovertemplate="%{x}<br>Regla dinámica: %{y:.2f} €<extra></extra>",
+            y=differences,
+            marker_color=colors,
+            text=[f"{value:+,.0f} €".replace(",", ".") for value in differences],
+            textposition="outside",
+            hovertemplate="%{x}<br>Diferencia: %{y:.2f} €<extra></extra>",
         )
     )
     figure.update_layout(
-        barmode="group",
         height=360,
         margin={"l": 10, "r": 10, "t": 20, "b": 10},
         paper_bgcolor="white",
         plot_bgcolor="white",
-        legend={"orientation": "h", "y": 1.12},
-        yaxis={"title": "Ingreso esperado (€)", "gridcolor": "#e7edf6"},
-        xaxis={"title": "Escenario de sensibilidad"},
+        showlegend=False,
+        yaxis={"title": "Diferencia de ingreso esperado (€)", "gridcolor": "#e7edf6"},
+        xaxis={"title": "Hipótesis de sensibilidad"},
+        shapes=[
+            {
+                "type": "line",
+                "x0": -0.5,
+                "x1": len(labels) - 0.5,
+                "y0": 0,
+                "y1": 0,
+                "line": {"color": "#71829d", "width": 1},
+            }
+        ],
     )
     return figure
 
 
 def value_for(data: pd.DataFrame, scenario: str, column: str) -> float:
     return float(data.loc[data["scenario"] == scenario, column].iloc[0])
+
+
+def load_elasticities() -> dict[str, float]:
+    payload = json.loads(PRICING_CONFIG_PATH.read_text(encoding="utf-8"))
+    return {name: float(values["elasticity"]) for name, values in payload["scenarios"].items()}
+
+
+def discount_response_pct(elasticity: float) -> float:
+    """Cambio relativo de ocupación para un descuento ilustrativo del 10 %."""
+    return ((0.90**-elasticity) - 1) * 100
 
 
 inject_dashboard_styles()
@@ -103,13 +120,18 @@ else:
     left, right = st.columns([1.75, 1], gap="large")
     with left:
         with st.container(border=True):
-            st.subheader("Impacto estimado por escenario")
-            st.caption("Los importes son esperados: no son ingresos observados de un club real.")
+            st.subheader("Impacto neto frente a tarifa fija")
+            st.caption(
+                "Así se ve la diferencia real; comparar ingresos totales ocultaba los cambios pequeños."
+            )
             st.plotly_chart(scenario_figure(data), use_container_width=True)
 
     with right:
         with st.container(border=True):
-            st.subheader("Selecciona una estrategia")
+            st.subheader("Explora una hipótesis")
+            st.caption(
+                "No es una estrategia comercial distinta: cambia el supuesto de respuesta al precio."
+            )
             default_scenario = st.session_state.get("prediction_preferred_scenario", "medium")
             selected = st.selectbox(
                 "Escenario para revisar",
@@ -121,6 +143,8 @@ else:
             selected_delta = value_for(data, selected, "expected_revenue_difference_eur")
             selected_occupancy = value_for(data, selected, "expected_occupancy_dynamic")
             selected_changes = int(value_for(data, selected, "prices_changed"))
+            elasticity = load_elasticities()[selected]
+            response = discount_response_pct(elasticity)
             st.markdown(f"**{SCENARIO_DESCRIPTIONS[selected]}**")
             st.metric(
                 "Ingreso dinámico esperado",
@@ -129,16 +153,26 @@ else:
             )
             st.metric("Ocupación esperada", f"{selected_occupancy:,.0f} reservas", "en el periodo")
             st.metric("Cambios de tarifa", f"{selected_changes:,}")
-            if st.button("Usar en Predicciones", type="primary", use_container_width=True):
-                st.session_state["prediction_preferred_scenario"] = selected
-                st.session_state["prediction_scenario"] = selected
-                st.success("Escenario seleccionado. Puedes volver a Predicciones para usarlo.")
-            st.page_link(
-                "pages/01_predicciones.py",
-                label="Ir a Predicciones",
-                icon="🎯",
-                use_container_width=True,
+            st.caption(
+                f"Con un descuento ilustrativo del 10 %, la ocupación simulada variaría {response:+.1f} %."
             )
+            if st.button("Probar en Predicciones", type="primary", use_container_width=True):
+                reference_date = date.today() + timedelta(days=2)
+                st.session_state.update(
+                    {
+                        "prediction_preferred_scenario": selected,
+                        "prediction_scenario": selected,
+                        "prediction_date": reference_date,
+                        "prediction_court": "exterior_1",
+                        "prediction_start_time": "08:00",
+                        "prediction_current_price": 14.0,
+                        "prediction_temperature": 22.0,
+                        "prediction_precipitation": 0.0,
+                        "prediction_wind": 15.0,
+                        "prediction_autorun": True,
+                    }
+                )
+                st.switch_page("pages/01_predicciones.py")
 
     with st.container(border=True):
         st.subheader("Detalle de la simulación")
