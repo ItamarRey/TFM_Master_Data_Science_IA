@@ -253,9 +253,15 @@ entre llenar una hora valle y conservar el ingreso esperado.
 
 Las pantallas **Histórico** y **Escenarios** leen, respectivamente, los
 indicadores del EDA y la comparación agregada de precios generados por los
-scripts reproducibles. La interfaz etiqueta todos los resultados como
-sintéticos y la opción de aplicar tarifa solo registra una acción simulada.
-No existe automatización de cambios comerciales ni de reservas.
+scripts reproducibles. En Escenarios, baja, media y alta son **hipótesis de
+respuesta al precio**, no tres estrategias comerciales que el gestor conozca
+con certeza. La vista destaca el impacto neto frente a tarifa fija y permite
+abrir un turno de referencia ya calculado en Predicciones con la hipótesis
+elegida; el gestor puede modificar sus datos y recalcular desde allí.
+
+La interfaz etiqueta todos los resultados como sintéticos y la opción de
+aplicar tarifa solo registra una acción simulada. No existe automatización de
+cambios comerciales ni de reservas.
 
 Para ejecutar el recorrido completo se generan los datos, EDA, modelo y
 escenarios en ese orden, y se inician `uvicorn backend.app.main:app --reload`
