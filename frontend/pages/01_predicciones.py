@@ -21,6 +21,15 @@ SCENARIOS = {
 }
 
 
+def next_weekday(weekday: int) -> date:
+    """Devuelve el siguiente día de la semana indicado, siempre con al menos 48 h de margen."""
+    today = date.today()
+    days_until = (weekday - today.weekday()) % 7
+    if days_until < 2:
+        days_until += 7
+    return today + timedelta(days=days_until)
+
+
 def inject_styles() -> None:
     st.markdown(
         """
@@ -146,14 +155,14 @@ def run_reference_prediction() -> None:
     """Carga el ejemplo enviado desde Escenarios antes de pintar los widgets."""
     if not st.session_state.pop("prediction_autorun", False):
         return
-    selected_date = st.session_state.get("prediction_date", date.today() + timedelta(days=2))
+    selected_date = st.session_state.get("prediction_date", next_weekday(5))
     if isinstance(selected_date, str):
         selected_date = date.fromisoformat(selected_date)
     payload = {
         "date": selected_date.isoformat(),
         "court_id": st.session_state.get("prediction_court", "exterior_1"),
         "start_time": st.session_state.get("prediction_start_time", "08:00"),
-        "current_price": st.session_state.get("prediction_current_price", 14.0),
+        "current_price": st.session_state.get("prediction_current_price", 20.0),
         "scenario": st.session_state.get("prediction_scenario", "medium"),
         "forecast_temperature_c": st.session_state.get("prediction_temperature", 22.0),
         "forecast_precipitation_mm": st.session_state.get("prediction_precipitation", 0.0),
@@ -248,18 +257,16 @@ with left:
         )
         with st.form("prediction_form"):
             st.markdown("**Datos del turno**")
-            selected_date = st.date_input(
-                "Fecha", value=date.today() + timedelta(days=2), key="prediction_date"
-            )
+            selected_date = st.date_input("Fecha", value=next_weekday(5), key="prediction_date")
             court_id = st.selectbox(
                 "Pista a gestionar",
                 options=list(COURTS),
                 format_func=COURTS.get,
                 key="prediction_court",
             )
-            start_time = st.selectbox("Hora de inicio", SLOTS, index=7, key="prediction_start_time")
+            start_time = st.selectbox("Hora de inicio", SLOTS, index=8, key="prediction_start_time")
             current_price = st.number_input(
-                "Tarifa vigente (€)", 8.0, 20.0, 14.0, 0.5, key="prediction_current_price"
+                "Tarifa vigente (€)", 14.0, 30.0, 21.0, 0.5, key="prediction_current_price"
             )
             st.markdown("**Previsión meteorológica (disponible 48 h antes)**")
             temperature = st.slider(
