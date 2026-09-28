@@ -15,7 +15,6 @@ import pandas as pd
 
 from padel_pricing.simulation.config import SimulationConfig
 
-
 FORECAST_COLUMNS = [
     "pronostico_temperatura_c",
     "pronostico_precipitacion_mm",
@@ -32,7 +31,14 @@ NUMERIC_COLUMNS = [
     "anticipacion_reserva_dias",
     "ingreso_final",
 ]
-BOOLEAN_COLUMNS = ["es_fin_de_semana", "es_festivo", "bloqueado", "cancelado", "no_show", "ocupado_final"]
+BOOLEAN_COLUMNS = [
+    "es_fin_de_semana",
+    "es_festivo",
+    "bloqueado",
+    "cancelado",
+    "no_show",
+    "ocupado_final",
+]
 GOLD_COLUMNS = [
     "id_slot",
     "fecha_hora_inicio",
@@ -102,9 +108,9 @@ def inject_controlled_issues(
     price_count = _rate_count(len(clean_data), quality.price_format_issue_rate)
     price_positions = _sample_positions(rng, len(clean_data), price_count)
     raw["tarifa_publicada"] = raw["tarifa_publicada"].astype(object)
-    raw.loc[price_positions, "tarifa_publicada"] = raw.loc[
-        price_positions, "tarifa_publicada"
-    ].map(lambda value: f"{float(value):.2f} €".replace(".", ","))
+    raw.loc[price_positions, "tarifa_publicada"] = raw.loc[price_positions, "tarifa_publicada"].map(
+        lambda value: f"{float(value):.2f} €".replace(".", ",")
+    )
     injected["price_format_issues"] = price_count
 
     category_count = _rate_count(len(clean_data), quality.category_format_issue_rate)
@@ -112,7 +118,9 @@ def inject_controlled_issues(
     for position in category_positions:
         raw.loc[position, "id_pista"] = f" {str(raw.loc[position, 'id_pista']).upper()} "
         raw.loc[position, "tipo_pista"] = f" {str(raw.loc[position, 'tipo_pista']).title()} "
-        raw.loc[position, "estado_reserva"] = f" {str(raw.loc[position, 'estado_reserva']).upper()} "
+        raw.loc[position, "estado_reserva"] = (
+            f" {str(raw.loc[position, 'estado_reserva']).upper()} "
+        )
     injected["category_format_issues"] = category_count
 
     missing_count = _rate_count(len(clean_data), quality.forecast_missing_rate)
@@ -146,7 +154,9 @@ def clean_operational_data(raw_data: pd.DataFrame) -> tuple[pd.DataFrame, dict[s
     data = data.loc[~duplicate_mask].copy()
 
     raw_datetime = data["fecha_hora_inicio"].astype("string").str.strip()
-    report["datetime_formats_normalised"] = int((~raw_datetime.str.match(r"^\d{4}-\d{2}-\d{2}T")).sum())
+    report["datetime_formats_normalised"] = int(
+        (~raw_datetime.str.match(r"^\d{4}-\d{2}-\d{2}T")).sum()
+    )
     data["fecha_hora_inicio"] = _parse_datetime(raw_datetime)
 
     raw_price = data["tarifa_publicada"].astype("string").str.strip()
