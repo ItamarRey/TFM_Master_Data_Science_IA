@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
@@ -11,7 +10,6 @@ import numpy as np
 import pandas as pd
 
 from padel_pricing.simulation.config import SimulationConfig
-
 
 OPEN_METEO_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 
