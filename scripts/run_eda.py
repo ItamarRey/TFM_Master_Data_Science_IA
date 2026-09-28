@@ -9,7 +9,6 @@ import pandas as pd
 
 from padel_pricing.analysis import analyze_dataset, write_analysis_artifacts
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
