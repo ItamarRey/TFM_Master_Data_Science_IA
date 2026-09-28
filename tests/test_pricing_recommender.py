@@ -31,6 +31,20 @@ def test_high_sensitivity_can_discount_price_when_demand_is_low() -> None:
     assert recommendation.variation_pct == -0.1
 
 
+def test_medium_sensitivity_discounts_price_when_demand_is_low() -> None:
+    recommendation = recommend_price(
+        current_price_eur=20.0,
+        occupancy_probability=0.25,
+        scenario_name="medium",
+        policy=POLICY,
+    )
+
+    assert recommendation.suggested_price_eur == 18.0
+    assert (
+        recommendation.expected_revenue_suggested_eur > recommendation.expected_revenue_current_eur
+    )
+
+
 def test_recommendation_never_exceeds_policy_price_bounds() -> None:
     recommendation = recommend_price(
         current_price_eur=29.0,
