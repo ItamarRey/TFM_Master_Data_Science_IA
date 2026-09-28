@@ -2,7 +2,7 @@ from datetime import date, timedelta
 
 import plotly.graph_objects as go
 import streamlit as st
-from services.api_client import create_prediction
+from services.api_client import create_decision, create_prediction
 
 COURTS = {
     "exterior_1": "Exterior 1",
@@ -133,6 +133,30 @@ def demand_label(probability: float) -> tuple[str, str]:
     return "Demanda intermedia", "chip-mid"
 
 
+def save_manager_decision(
+    action: str, result: dict[str, object], inputs: dict[str, object]
+) -> None:
+    """Registra la acción en la API sin tocar una tarifa real del club."""
+    payload = {
+        "action": action,
+        "date": inputs["date"],
+        "court_id": inputs["court_id"],
+        "start_time": inputs["start_time"],
+        "scenario": result["scenario"],
+        "occupancy_probability": result["occupancy_probability"],
+        "current_price": result["current_price"],
+        "suggested_price": result["suggested_price"],
+    }
+    try:
+        decision = create_decision(payload)
+        st.session_state["applied_message"] = (
+            f"Decisión simulada registrada: {decision['action_label']}. "
+            "No se ha modificado ninguna tarifa real."
+        )
+    except Exception as exc:
+        st.error(f"No se pudo registrar la decisión: {exc}")
+
+
 def show_sidebar() -> None:
     with st.sidebar:
         st.markdown('<div class="brand">🎾 PádelPulse</div>', unsafe_allow_html=True)
@@ -227,8 +251,12 @@ with left:
             temperature = st.slider("Temperatura prevista (°C)", 10.0, 35.0, 22.0, 0.5)
             precipitation = st.slider("Lluvia prevista (mm)", 0.0, 10.0, 0.0, 0.1)
             wind = st.slider("Viento previsto (km/h)", 0.0, 50.0, 15.0, 1.0)
+            preferred_scenario = st.session_state.get("prediction_preferred_scenario", "medium")
             scenario = st.selectbox(
-                "Respuesta esperada al precio", list(SCENARIOS), format_func=SCENARIOS.get
+                "Respuesta esperada al precio",
+                list(SCENARIOS),
+                format_func=SCENARIOS.get,
+                index=list(SCENARIOS).index(preferred_scenario),
             )
             submitted = st.form_submit_button(
                 "Actualizar predicción", type="primary", use_container_width=True
@@ -362,11 +390,9 @@ with right:
             )
             st.subheader("Acciones disponibles")
             if st.button("Aplicar tarifa sugerida", type="primary", use_container_width=True):
-                st.session_state["applied_message"] = (
-                    "Acción simulada: no se ha modificado ninguna reserva ni tarifa real."
-                )
+                save_manager_decision("apply_suggested", result, inputs)
             if st.button("Mantener tarifa base", use_container_width=True):
-                st.session_state["applied_message"] = "Acción simulada: se mantiene la tarifa base."
+                save_manager_decision("keep_base", result, inputs)
             st.page_link(
                 "pages/02_escenarios.py",
                 label="Comparar escenarios",
