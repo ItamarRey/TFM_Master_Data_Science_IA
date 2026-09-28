@@ -24,6 +24,7 @@ def inject_styles() -> None:
     st.markdown(
         """
         <style>
+        html { color-scheme: light; }
         [data-testid="stAppViewContainer"] { background: #f5f7fb; }
         [data-testid="stHeader"] { background: transparent; }
         [data-testid="stSidebar"] { background: #101c36; }
@@ -34,7 +35,59 @@ def inject_styles() -> None:
           border: 0; box-shadow: none;
         }
         [data-testid="stSidebar"] .stButton > button:hover { background: #294575; }
+        [data-testid="stSidebar"] [data-testid="stPageLink"] a {
+          background: transparent !important; border: 0 !important; color: #d7e2f7 !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {
+          background: #294575 !important; color: #ffffff !important;
+        }
         .block-container { max-width: 1600px; padding-top: 2.5rem; padding-bottom: 2rem; }
+        [data-testid="stWidgetLabel"] p, [data-testid="stWidgetLabel"] label,
+        [data-testid="stWidgetLabel"] span { color: #344563 !important; font-weight: 700 !important; }
+        [data-baseweb="select"] > div, [data-baseweb="input"] > div,
+        [data-testid="stDateInput"] input, [data-testid="stNumberInput"] input {
+          background: #ffffff !important; color: #17233f !important;
+          border-color: #cbd7ea !important;
+        }
+        [data-baseweb="select"] *, [data-testid="stDateInput"] input,
+        [data-testid="stNumberInput"] input { color: #17233f !important; }
+        [data-testid="stSlider"] [data-testid="stThumbValue"] { color: #2e6ae6 !important; }
+        [data-testid="stSlider"] div[data-baseweb="slider"] div[role="slider"] {
+          background: #2e6ae6 !important;
+        }
+        [data-testid="stFormSubmitButton"] > button {
+          background: #2e6ae6 !important; border-color: #2e6ae6 !important;
+          color: #ffffff !important; font-weight: 700;
+        }
+        [data-testid="stFormSubmitButton"] > button:hover {
+          background: #1f57be !important; border-color: #1f57be !important;
+          color: #ffffff !important;
+        }
+        div[data-testid="stButton"] > button {
+          background: #ffffff !important; border: 1px solid #b9c8e0 !important;
+          color: #1f57be !important; font-weight: 700;
+        }
+        div[data-testid="stButton"] > button:hover {
+          background: #edf3ff !important; border-color: #2e6ae6 !important;
+          color: #173f8f !important;
+        }
+        div[data-testid="stButton"] > button[kind="primary"] {
+          background: #2e6ae6 !important; border-color: #2e6ae6 !important;
+          color: #ffffff !important;
+        }
+        div[data-testid="stButton"] > button[kind="primary"]:hover {
+          background: #1f57be !important; border-color: #1f57be !important;
+          color: #ffffff !important;
+        }
+        [data-testid="stPageLink"] a {
+          background: #ffffff !important; border: 1px solid #b9c8e0 !important;
+          border-radius: .45rem !important; color: #1f57be !important;
+          font-weight: 700 !important; justify-content: center !important;
+        }
+        [data-testid="stPageLink"] a:hover {
+          background: #edf3ff !important; border-color: #2e6ae6 !important;
+          color: #173f8f !important;
+        }
         h1, h2, h3 { color: #17233f !important; }
         .app-kicker { color: #6e7f9f; font-size: 1.05rem; margin-top: -0.6rem; }
         .status-badge { display: inline-block; background: #eee7ff; color: #6736c5;
@@ -96,7 +149,9 @@ def build_price_figure(candidates: list[dict[str, object]], suggested_price: flo
     ordered = sorted(candidates, key=lambda item: float(item["price_eur"]))
     prices = [float(item["price_eur"]) for item in ordered]
     occupancy = [float(item["simulated_occupancy_probability"]) * 100 for item in ordered]
-    allowed = [bool(item["is_allowed"]) for item in ordered]
+    # Las respuestas calculadas antes de la mejora no contenían ``is_allowed``.
+    # Se tratan como permitidas para que una sesión de Streamlit previa no falle.
+    allowed = [bool(item.get("is_allowed", True)) for item in ordered]
     marker_colors = ["#2e6ae6" if item else "#b4c1d6" for item in allowed]
     marker_symbols = ["circle" if item else "x" for item in allowed]
     figure = go.Figure()
@@ -111,7 +166,7 @@ def build_price_figure(candidates: list[dict[str, object]], suggested_price: flo
             hovertemplate="Tarifa: %{x:.2f} €<br>Ocupación: %{y:.1f}%<br>%{customdata}<extra></extra>",
         )
     )
-    selected = next(item for item in ordered if float(item["price_eur"]) == suggested_price)
+    selected = min(ordered, key=lambda item: abs(float(item["price_eur"]) - suggested_price))
     figure.add_trace(
         go.Scatter(
             x=[suggested_price],
@@ -161,16 +216,19 @@ with left:
             '<p class="card-caption">Selecciona el turno a analizar</p>', unsafe_allow_html=True
         )
         with st.form("prediction_form"):
+            st.markdown("**Datos del turno**")
             selected_date = st.date_input("Fecha", value=date.today() + timedelta(days=2))
-            court_id = st.selectbox("Pista", options=list(COURTS), format_func=COURTS.get)
-            start_time = st.selectbox("Turno", SLOTS, index=7)
-            current_price = st.number_input("Tarifa base (€)", 8.0, 20.0, 14.0, 0.5)
-            st.markdown("**Previsión disponible 48 h antes**")
+            court_id = st.selectbox(
+                "Pista a gestionar", options=list(COURTS), format_func=COURTS.get
+            )
+            start_time = st.selectbox("Hora de inicio", SLOTS, index=7)
+            current_price = st.number_input("Tarifa vigente (€)", 8.0, 20.0, 14.0, 0.5)
+            st.markdown("**Previsión meteorológica (disponible 48 h antes)**")
             temperature = st.slider("Temperatura prevista (°C)", 10.0, 35.0, 22.0, 0.5)
             precipitation = st.slider("Lluvia prevista (mm)", 0.0, 10.0, 0.0, 0.1)
             wind = st.slider("Viento previsto (km/h)", 0.0, 50.0, 15.0, 1.0)
             scenario = st.selectbox(
-                "Escenario de sensibilidad", list(SCENARIOS), format_func=SCENARIOS.get
+                "Respuesta esperada al precio", list(SCENARIOS), format_func=SCENARIOS.get
             )
             submitted = st.form_submit_button(
                 "Actualizar predicción", type="primary", use_container_width=True
@@ -292,16 +350,16 @@ with right:
                 decision_text, objective = "Reducir tarifa", "Objetivo: incentivar la ocupación"
             else:
                 decision_text, objective = "Incrementar tarifa", "Objetivo: capturar demanda alta"
-            st.markdown('<div class="price-decision">', unsafe_allow_html=True)
-            st.markdown('<p class="metric-label">TARIFA SUGERIDA</p>', unsafe_allow_html=True)
             st.markdown(
-                f'<div class="price-value">{format_eur(suggested_price)}</div>',
+                f"""<div class="price-decision">
+                <p class="metric-label">TARIFA SUGERIDA</p>
+                <div class="price-value">{format_eur(suggested_price)}</div>
+                <p><strong>{variation:+.0%}</strong> respecto a la tarifa base · {decision_text}</p>
+                <p>{objective}</p>
+                <span class="card-caption">Revisión requerida antes de aplicar</span>
+                </div>""",
                 unsafe_allow_html=True,
             )
-            st.markdown(f"**{variation:+.0%}** respecto a la tarifa base · {decision_text}")
-            st.write(objective)
-            st.caption("Revisión requerida antes de aplicar")
-            st.markdown("</div>", unsafe_allow_html=True)
             st.subheader("Acciones disponibles")
             if st.button("Aplicar tarifa sugerida", type="primary", use_container_width=True):
                 st.session_state["applied_message"] = (
