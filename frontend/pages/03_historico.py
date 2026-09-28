@@ -5,7 +5,6 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 EDA_PATH = PROJECT_ROOT / "reports" / "generated" / "eda_metrics.json"
 
