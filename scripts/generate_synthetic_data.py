@@ -5,20 +5,19 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import asdict, replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from padel_pricing.simulation import (
-    fetch_weather,
-    generate_operational_data,
-    load_simulation_config,
-)
 from padel_pricing.data_quality import (
     build_gold_dataset,
     clean_operational_data,
     inject_controlled_issues,
 )
-
+from padel_pricing.simulation import (
+    fetch_weather,
+    generate_operational_data,
+    load_simulation_config,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -73,7 +72,7 @@ def main() -> None:
 
     metadata = {
         "schema_version": "1.0",
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "rows": len(gold_data),
         "raw_operational_rows": len(raw_operational),
         "seed": config.seed,
@@ -100,7 +99,9 @@ def main() -> None:
 
     occupied = gold_data.loc[~gold_data["bloqueado"], "ocupado_final"].mean()
     print(f"Extracto Raw operativo: {len(raw_operational):,} filas")
-    print(f"Capa Silver: {len(silver_operational):,} turnos | Duplicados eliminados: {quality_report['duplicate_rows_removed']}")
+    print(
+        f"Capa Silver: {len(silver_operational):,} turnos | Duplicados eliminados: {quality_report['duplicate_rows_removed']}"
+    )
     print(f"Dataset Gold: {len(gold_data):,} turnos")
     print(f"Ocupación final en turnos elegibles: {occupied:.1%}")
     print(f"Informe de calidad: {processed_dir / 'operational_quality_report.json'}")
