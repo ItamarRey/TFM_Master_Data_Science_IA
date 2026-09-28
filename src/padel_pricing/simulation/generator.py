@@ -9,7 +9,6 @@ import pandas as pd
 
 from padel_pricing.simulation.config import SimulationConfig
 
-
 ELASTICITY_BY_SCENARIO = {"low": 0.10, "medium": 0.28, "high": 0.46}
 PUBLIC_HOLIDAYS = {
     (1, 1): "Año Nuevo",
