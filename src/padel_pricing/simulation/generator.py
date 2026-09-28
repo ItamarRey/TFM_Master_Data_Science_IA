@@ -103,9 +103,10 @@ def generate_operational_data(config: SimulationConfig, weather: pd.DataFrame) -
 
 
 def _published_price(base_price: float, day: date, hour: int, court_type: str) -> float:
-    peak_supplement = 2.0 if hour in {18, 20} else 0.0
-    weekend_supplement = 0.5 if day.weekday() >= 5 else 0.0
-    indoor_supplement = 0.5 if court_type == "interior" else 0.0
+    """Construye una tarifa de 90 minutos coherente con la configuración del club simulado."""
+    peak_supplement = 4.0 if hour in {18, 20} else 2.0 if hour in {17, 21} else 0.0
+    weekend_supplement = 1.0 if day.weekday() >= 5 else 0.0
+    indoor_supplement = 2.0 if court_type == "interior" else 0.0
     return round(base_price + peak_supplement + weekend_supplement + indoor_supplement, 2)
 
 
@@ -133,19 +134,22 @@ def _occupancy_probability(
     price_sensitivity: str,
     rng: np.random.Generator,
 ) -> float:
-    score = -0.65
+    # La distribución incluye horas punta realmente escasas, además de horas valle.
+    # Así la regla puede evaluar descuentos, mantenimiento y subidas sin inventar
+    # una certeza: la ocupación final sigue incorporando variabilidad aleatoria.
+    score = -0.55
     if hour in {18, 20}:
-        score += 1.25
+        score += 1.85
     elif hour in {17, 21}:
-        score += 0.55
+        score += 0.65
     elif hour in {8, 9, 11, 12, 14, 15}:
         score -= 0.30
     if day.weekday() >= 5:
-        score += 0.55
+        score += 0.60
     if (day.month, day.day) in PUBLIC_HOLIDAYS:
-        score += 0.35
+        score += 0.40
     if day.month in {7, 8}:
-        score += 0.20
+        score += 0.25
     if court_type == "interior":
         score += 0.12
     else:
@@ -153,7 +157,7 @@ def _occupancy_probability(
         score -= max(0.0, wind - 18) * 0.025
         score -= max(0.0, 18 - temperature) * 0.05
     score -= ELASTICITY_BY_SCENARIO[price_sensitivity] * (price - base_price)
-    score += court_effect + rng.normal(0, 0.30)
+    score += court_effect + rng.normal(0, 0.28)
     return float(1 / (1 + np.exp(-score)))
 
 
