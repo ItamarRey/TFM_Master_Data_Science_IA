@@ -2,9 +2,7 @@ from datetime import date, timedelta
 
 import plotly.graph_objects as go
 import streamlit as st
-
 from services.api_client import create_prediction
-
 
 COURTS = {
     "exterior_1": "Exterior 1",
@@ -155,8 +153,13 @@ left, center, right = st.columns([1.1, 2.05, 1.15], gap="large")
 
 with left:
     with st.container(border=True):
-        st.markdown('<span class="step-label">1 &nbsp; CONFIGURA LA PREDICCIÓN</span>', unsafe_allow_html=True)
-        st.markdown('<p class="card-caption">Selecciona el turno a analizar</p>', unsafe_allow_html=True)
+        st.markdown(
+            '<span class="step-label">1 &nbsp; CONFIGURA LA PREDICCIÓN</span>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<p class="card-caption">Selecciona el turno a analizar</p>', unsafe_allow_html=True
+        )
         with st.form("prediction_form"):
             selected_date = st.date_input("Fecha", value=date.today() + timedelta(days=2))
             court_id = st.selectbox("Pista", options=list(COURTS), format_func=COURTS.get)
@@ -166,15 +169,23 @@ with left:
             temperature = st.slider("Temperatura prevista (°C)", 10.0, 35.0, 22.0, 0.5)
             precipitation = st.slider("Lluvia prevista (mm)", 0.0, 10.0, 0.0, 0.1)
             wind = st.slider("Viento previsto (km/h)", 0.0, 50.0, 15.0, 1.0)
-            scenario = st.selectbox("Escenario de sensibilidad", list(SCENARIOS), format_func=SCENARIOS.get)
-            submitted = st.form_submit_button("Actualizar predicción", type="primary", use_container_width=True)
+            scenario = st.selectbox(
+                "Escenario de sensibilidad", list(SCENARIOS), format_func=SCENARIOS.get
+            )
+            submitted = st.form_submit_button(
+                "Actualizar predicción", type="primary", use_container_width=True
+            )
         st.caption("Las variables se consideran conocidas 48 horas antes del turno.")
 
 if submitted:
     payload = {
-        "date": selected_date.isoformat(), "court_id": court_id, "start_time": start_time,
-        "current_price": current_price, "scenario": scenario,
-        "forecast_temperature_c": temperature, "forecast_precipitation_mm": precipitation,
+        "date": selected_date.isoformat(),
+        "court_id": court_id,
+        "start_time": start_time,
+        "current_price": current_price,
+        "scenario": scenario,
+        "forecast_temperature_c": temperature,
+        "forecast_precipitation_mm": precipitation,
         "forecast_wind_kmh": wind,
     }
     try:
@@ -188,74 +199,133 @@ inputs = st.session_state.get("prediction_inputs", {})
 
 with center:
     with st.container(border=True):
-        st.markdown('<span class="step-label">2 &nbsp; RESULTADO ESTIMADO</span>', unsafe_allow_html=True)
+        st.markdown(
+            '<span class="step-label">2 &nbsp; RESULTADO ESTIMADO</span>', unsafe_allow_html=True
+        )
         if not result:
             st.info("Configura un turno y pulsa **Actualizar predicción** para ver el resultado.")
         else:
             probability = float(result["occupancy_probability"])
             demand, demand_class = demand_label(probability)
-            st.markdown('<p class="metric-label">PROBABILIDAD DE OCUPACIÓN</p>', unsafe_allow_html=True)
+            st.markdown(
+                '<p class="metric-label">PROBABILIDAD DE OCUPACIÓN</p>', unsafe_allow_html=True
+            )
             st.markdown(
                 f'<span class="big-probability">{probability:.0%}</span><span class="demand-chip {demand_class}">{demand}</span>',
                 unsafe_allow_html=True,
             )
             st.divider()
             stats = st.columns(3)
-            minimum = min(float(item["simulated_occupancy_probability"]) for item in result["candidates"])
-            maximum = max(float(item["simulated_occupancy_probability"]) for item in result["candidates"])
-            stats[0].markdown(f'<div class="result-stat"><span class="card-caption">Rango comparado</span><br><strong>{minimum:.0%} – {maximum:.0%}</strong></div>', unsafe_allow_html=True)
-            stats[1].markdown('<div class="result-stat"><span class="card-caption">Calidad del dato</span><br><strong style="color:#108865">Alta</strong></div>', unsafe_allow_html=True)
-            stats[2].markdown('<div class="result-stat"><span class="card-caption">Estado</span><br><strong>Listo para revisar</strong></div>', unsafe_allow_html=True)
-            st.caption("Estimación de una simulación; no es un resultado observado de un club real.")
+            minimum = min(
+                float(item["simulated_occupancy_probability"]) for item in result["candidates"]
+            )
+            maximum = max(
+                float(item["simulated_occupancy_probability"]) for item in result["candidates"]
+            )
+            stats[0].markdown(
+                f'<div class="result-stat"><span class="card-caption">Rango comparado</span><br><strong>{minimum:.0%} – {maximum:.0%}</strong></div>',
+                unsafe_allow_html=True,
+            )
+            stats[1].markdown(
+                '<div class="result-stat"><span class="card-caption">Calidad del dato</span><br><strong style="color:#108865">Alta</strong></div>',
+                unsafe_allow_html=True,
+            )
+            stats[2].markdown(
+                '<div class="result-stat"><span class="card-caption">Estado</span><br><strong>Listo para revisar</strong></div>',
+                unsafe_allow_html=True,
+            )
+            st.caption(
+                "Estimación de una simulación; no es un resultado observado de un club real."
+            )
 
     if result:
         with st.container(border=True):
             st.subheader("Ocupación estimada por precio")
             st.caption("Compara las tarifas candidatas para este mismo turno.")
-            st.plotly_chart(build_price_figure(result["candidates"], float(result["suggested_price"])), use_container_width=True)
-            st.caption("Los marcadores grises se visualizan para comparar, pero no están permitidos por la regla de negocio para esta demanda.")
+            st.plotly_chart(
+                build_price_figure(result["candidates"], float(result["suggested_price"])),
+                use_container_width=True,
+            )
+            st.caption(
+                "Los marcadores grises se visualizan para comparar, pero no están permitidos por la regla de negocio para esta demanda."
+            )
 
         with st.container(border=True):
             st.subheader("Por qué aparece esta recomendación")
             factor_columns = st.columns(3)
-            weather_text = f'{float(inputs.get("forecast_temperature_c", 0)):.0f} °C · {float(inputs.get("forecast_precipitation_mm", 0)):.1f} mm'
-            factor_columns[0].markdown(f'<div class="factor-card"><strong>METEOROLOGÍA</strong><br><br>{weather_text}</div>', unsafe_allow_html=True)
-            factor_columns[1].markdown(f'<div class="factor-card"><strong>FRANJA HORARIA</strong><br><br>{inputs.get("start_time", "—")}</div>', unsafe_allow_html=True)
-            factor_columns[2].markdown(f'<div class="factor-card"><strong>ESCENARIO DE PRECIO</strong><br><br>{result["scenario_label"]}</div>', unsafe_allow_html=True)
+            weather_text = f"{float(inputs.get('forecast_temperature_c', 0)):.0f} °C · {float(inputs.get('forecast_precipitation_mm', 0)):.1f} mm"
+            factor_columns[0].markdown(
+                f'<div class="factor-card"><strong>METEOROLOGÍA</strong><br><br>{weather_text}</div>',
+                unsafe_allow_html=True,
+            )
+            factor_columns[1].markdown(
+                f'<div class="factor-card"><strong>FRANJA HORARIA</strong><br><br>{inputs.get("start_time", "—")}</div>',
+                unsafe_allow_html=True,
+            )
+            factor_columns[2].markdown(
+                f'<div class="factor-card"><strong>ESCENARIO DE PRECIO</strong><br><br>{result["scenario_label"]}</div>',
+                unsafe_allow_html=True,
+            )
             for item in result["explanation"]:
                 st.write(f"- {item}")
 
 with right:
     with st.container(border=True):
-        st.markdown('<span class="step-label" style="color:#108865">3 &nbsp; DECIDE LA TARIFA</span>', unsafe_allow_html=True)
-        st.markdown('<p class="card-caption">Recomendación para este turno</p>', unsafe_allow_html=True)
+        st.markdown(
+            '<span class="step-label" style="color:#108865">3 &nbsp; DECIDE LA TARIFA</span>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<p class="card-caption">Recomendación para este turno</p>', unsafe_allow_html=True
+        )
         if not result:
             st.info("El resultado aparecerá aquí tras calcular la predicción.")
         else:
             suggested_price = float(result["suggested_price"])
             variation = float(result["variation_pct"])
             if variation == 0:
-                decision_text, objective = "Mantener tarifa base", "No se recomienda cambio para esta demanda"
+                decision_text, objective = (
+                    "Mantener tarifa base",
+                    "No se recomienda cambio para esta demanda",
+                )
             elif variation < 0:
                 decision_text, objective = "Reducir tarifa", "Objetivo: incentivar la ocupación"
             else:
                 decision_text, objective = "Incrementar tarifa", "Objetivo: capturar demanda alta"
             st.markdown('<div class="price-decision">', unsafe_allow_html=True)
             st.markdown('<p class="metric-label">TARIFA SUGERIDA</p>', unsafe_allow_html=True)
-            st.markdown(f'<div class="price-value">{format_eur(suggested_price)}</div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="price-value">{format_eur(suggested_price)}</div>',
+                unsafe_allow_html=True,
+            )
             st.markdown(f"**{variation:+.0%}** respecto a la tarifa base · {decision_text}")
             st.write(objective)
             st.caption("Revisión requerida antes de aplicar")
             st.markdown("</div>", unsafe_allow_html=True)
             st.subheader("Acciones disponibles")
             if st.button("Aplicar tarifa sugerida", type="primary", use_container_width=True):
-                st.session_state["applied_message"] = "Acción simulada: no se ha modificado ninguna reserva ni tarifa real."
+                st.session_state["applied_message"] = (
+                    "Acción simulada: no se ha modificado ninguna reserva ni tarifa real."
+                )
             if st.button("Mantener tarifa base", use_container_width=True):
                 st.session_state["applied_message"] = "Acción simulada: se mantiene la tarifa base."
-            st.page_link("pages/02_escenarios.py", label="Comparar escenarios", icon="📈", use_container_width=True)
+            st.page_link(
+                "pages/02_escenarios.py",
+                label="Comparar escenarios",
+                icon="📈",
+                use_container_width=True,
+            )
             if message := st.session_state.get("applied_message"):
                 st.success(message)
-            difference = float(result["expected_revenue_suggested"]) - float(result["expected_revenue_current"])
-            st.markdown(f'<div class="soft-alert"><strong>Ingreso esperado del turno: {format_eur(float(result["expected_revenue_suggested"]))}</strong><br>Media simulada (probabilidad × tarifa), no ingreso garantizado. Diferencia frente a la base: {format_eur(difference)}.</div>', unsafe_allow_html=True)
+            difference = float(result["expected_revenue_suggested"]) - float(
+                result["expected_revenue_current"]
+            )
+            st.markdown(
+                f'<div class="soft-alert"><strong>Ingreso esperado del turno: {format_eur(float(result["expected_revenue_suggested"]))}</strong><br>Media simulada (probabilidad × tarifa), no ingreso garantizado. Diferencia frente a la base: {format_eur(difference)}.</div>',
+                unsafe_allow_html=True,
+            )
 
-st.markdown('<div class="info-footer">ⓘ La predicción usa datos operativos sintéticos y previsión meteorológica pública. Puedes revisar o rechazar la recomendación.</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="info-footer">ⓘ La predicción usa datos operativos sintéticos y previsión meteorológica pública. Puedes revisar o rechazar la recomendación.</div>',
+    unsafe_allow_html=True,
+)
