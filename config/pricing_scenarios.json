@@ -9,15 +9,18 @@
   "scenarios": {
     "low": {
       "label": "Sensibilidad baja",
-      "elasticity": 0.35
+      "low_demand_elasticity": 1.02,
+      "high_demand_elasticity": 0.30
     },
     "medium": {
       "label": "Sensibilidad media",
-      "elasticity": 0.75
+      "low_demand_elasticity": 1.20,
+      "high_demand_elasticity": 0.55
     },
     "high": {
       "label": "Sensibilidad alta",
-      "elasticity": 1.15
+      "low_demand_elasticity": 1.50,
+      "high_demand_elasticity": 0.80
     }
   }
 }
