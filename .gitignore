@@ -18,6 +18,8 @@ data/processed/*
 !data/processed/.gitkeep
 data/gold/*
 !data/gold/.gitkeep
+data/app/*
+!data/app/.gitkeep
 models/*
 !models/.gitkeep
 
