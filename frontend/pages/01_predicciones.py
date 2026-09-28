@@ -2,7 +2,7 @@ from datetime import date, timedelta
 
 import plotly.graph_objects as go
 import streamlit as st
-from components.dashboard_ui import render_sidebar
+from components.dashboard_ui import inject_dashboard_styles, render_sidebar
 from services.api_client import create_decision, create_prediction
 
 COURTS = {
@@ -26,23 +26,7 @@ def inject_styles() -> None:
         """
         <style>
         html { color-scheme: light; }
-        [data-testid="stAppViewContainer"] { background: #f5f7fb; }
-        [data-testid="stHeader"] { background: transparent; }
-        [data-testid="stSidebar"] { background: #101c36; }
-        [data-testid="stSidebarNav"] { display: none; }
-        [data-testid="stSidebar"] * { color: #eef4ff; }
-        [data-testid="stSidebar"] .stButton > button {
-          justify-content: flex-start; color: #d7e2f7; background: transparent;
-          border: 0; box-shadow: none;
-        }
-        [data-testid="stSidebar"] .stButton > button:hover { background: #294575; }
-        [data-testid="stSidebar"] [data-testid="stPageLink"] a {
-          background: transparent !important; border: 0 !important; color: #d7e2f7 !important;
-        }
-        [data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {
-          background: #294575 !important; color: #ffffff !important;
-        }
-        .block-container { max-width: 1600px; padding-top: 2.5rem; padding-bottom: 2rem; }
+        .block-container { max-width: 1500px; padding-top: 2.5rem; padding-bottom: 2rem; }
         [data-testid="stWidgetLabel"] p, [data-testid="stWidgetLabel"] label,
         [data-testid="stWidgetLabel"] span { color: #344563 !important; font-weight: 700 !important; }
         [data-baseweb="select"] > div, [data-baseweb="input"] > div,
@@ -80,12 +64,12 @@ def inject_styles() -> None:
           background: #1f57be !important; border-color: #1f57be !important;
           color: #ffffff !important;
         }
-        [data-testid="stPageLink"] a {
+        [data-testid="stMain"] [data-testid="stPageLink"] a {
           background: #ffffff !important; border: 1px solid #b9c8e0 !important;
           border-radius: .45rem !important; color: #1f57be !important;
           font-weight: 700 !important; justify-content: center !important;
         }
-        [data-testid="stPageLink"] a:hover {
+        [data-testid="stMain"] [data-testid="stPageLink"] a:hover {
           background: #edf3ff !important; border-color: #2e6ae6 !important;
           color: #173f8f !important;
         }
@@ -229,6 +213,7 @@ def build_price_figure(candidates: list[dict[str, object]], suggested_price: flo
 
 
 inject_styles()
+inject_dashboard_styles()
 render_sidebar("Predicciones")
 run_reference_prediction()
 
