@@ -221,7 +221,8 @@ def _validate_policy(policy: PricingPolicy) -> None:
 
 
 def _validate_recommendation_inputs(
-    *, current_price_eur: float,
+    *,
+    current_price_eur: float,
     occupancy_probability: float,
     scenario_name: str,
     policy: PricingPolicy,
