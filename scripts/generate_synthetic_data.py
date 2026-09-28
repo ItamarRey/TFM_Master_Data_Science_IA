@@ -8,6 +8,8 @@ from dataclasses import asdict, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pandas as pd
+
 from padel_pricing.data_quality import (
     build_gold_dataset,
     clean_operational_data,
@@ -35,6 +37,14 @@ def parse_args() -> argparse.Namespace:
         choices=["open-meteo", "synthetic"],
         help="Sobrescribe la fuente meteorológica configurada.",
     )
+    parser.add_argument(
+        "--weather-file",
+        type=Path,
+        help=(
+            "Reutiliza un extracto meteorológico guardado previamente. Resulta útil para "
+            "reproducir exactamente una ejecución sin volver a consultar Open-Meteo."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -50,7 +60,7 @@ def main() -> None:
     for directory in (raw_dir, processed_dir, gold_dir):
         directory.mkdir(parents=True, exist_ok=True)
 
-    weather = fetch_weather(config)
+    weather = _load_weather_file(args.weather_file) if args.weather_file else fetch_weather(config)
     operational_truth = generate_operational_data(config, weather)
     raw_operational, injected_issues = inject_controlled_issues(operational_truth, config)
     silver_operational, quality_report = clean_operational_data(raw_operational)
@@ -76,7 +86,9 @@ def main() -> None:
         "rows": len(gold_data),
         "raw_operational_rows": len(raw_operational),
         "seed": config.seed,
-        "weather_source": config.weather.source,
+        "weather_source": "archivo meteorológico reutilizado"
+        if args.weather_file
+        else config.weather.source,
         "configuration": asdict(config),
         "definitions": {
             "ocupado_final": (
@@ -105,6 +117,37 @@ def main() -> None:
     print(f"Dataset Gold: {len(gold_data):,} turnos")
     print(f"Ocupación final en turnos elegibles: {occupied:.1%}")
     print(f"Informe de calidad: {processed_dir / 'operational_quality_report.json'}")
+
+
+def _load_weather_file(path: Path) -> pd.DataFrame:
+    """Carga un extracto previamente guardado conservando el esquema del simulador."""
+    if not path.exists():
+        raise FileNotFoundError(f"No existe el archivo meteorológico: {path}")
+    weather = pd.read_json(path)
+    required = {
+        "timestamp",
+        "date",
+        "weather_hour",
+        "temperatura_c",
+        "precipitacion_mm",
+        "viento_kmh",
+    }
+    missing = required.difference(weather.columns)
+    if missing:
+        raise ValueError(f"El archivo meteorológico no contiene: {', '.join(sorted(missing))}")
+    weather["timestamp"] = pd.to_datetime(weather["timestamp"])
+    weather["date"] = pd.to_datetime(weather["date"]).dt.date
+    weather["weather_hour"] = weather["weather_hour"].astype(int)
+    return weather[
+        [
+            "timestamp",
+            "date",
+            "weather_hour",
+            "temperatura_c",
+            "precipitacion_mm",
+            "viento_kmh",
+        ]
+    ]
 
 
 if __name__ == "__main__":
