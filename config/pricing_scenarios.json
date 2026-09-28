@@ -1,9 +1,9 @@
 {
   "rules": {
-    "minimum_price_eur": 8.0,
-    "maximum_price_eur": 20.0,
-    "low_demand_probability_threshold": 0.35,
-    "high_demand_probability_threshold": 0.65,
+    "minimum_price_eur": 14.0,
+    "maximum_price_eur": 30.0,
+    "low_demand_probability_threshold": 0.30,
+    "high_demand_probability_threshold": 0.50,
     "candidate_variations": [-0.1, -0.05, 0.0, 0.05, 0.1]
   },
   "scenarios": {
