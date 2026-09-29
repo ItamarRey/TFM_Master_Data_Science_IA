@@ -67,18 +67,18 @@ turnos bloqueados u ocupados a la vez. Los principales resultados son:
 | Indicador | Resultado |
 | --- | ---: |
 | Turnos ofertados | 43.860 |
-| Turnos bloqueados | 471 |
-| Ocupación de turnos elegibles | 32,24 % |
-| Cancelaciones sobre turnos no bloqueados | 2,83 % |
-| Ingresos finales simulados | 258.216,00 € |
+| Turnos bloqueados | 468 |
+| Ocupación de turnos elegibles | 32,12 % |
+| Cancelaciones sobre turnos no bloqueados | 2,68 % |
+| Ingresos finales simulados | 257.202,00 € |
 
 Los patrones relevantes para modelado y negocio fueron:
 
-- Tarde y noche alcanzan aproximadamente un 41 % de ocupación, frente a
-  un 26 % por la mañana y al mediodía.
-- Sábado y domingo alcanzan aproximadamente un 36 % de ocupación, por encima
-  de los días laborables (alrededor del 30–31 %).
-- En pistas exteriores, la ocupación pasa de 37,22 % sin lluvia a 16,53 %
+- Tarde y noche alcanzan un 41,16 % y un 40,64 % de ocupación, frente a
+  un 25,92 % por la mañana y un 26,61 % al mediodía.
+- Sábado y domingo alcanzan un 36,83 % y un 36,06 %, por encima de los días
+  laborables (entre 29,91 % y 30,71 %).
+- En pistas exteriores, la ocupación pasa de 36,91 % sin lluvia a 13,80 %
   con lluvia moderada o alta.
 - Las pistas interiores tienen una ocupación media menor en este escenario.
   No es una conclusión general: también tienen una tarifa media superior y la
@@ -108,8 +108,8 @@ observada, porque no estarían disponibles al realizar la predicción.
 
 ### 4.2. División temporal y modelos comparados
 
-Se entrena con los 21.704 turnos anteriores al 1 de enero de 2025 y se evalúa
-con los 21.685 turnos posteriores. Esta división temporal evita que el modelo
+Se entrena con los 21.726 turnos anteriores al 1 de enero de 2025 y se evalúa
+con los 21.666 turnos posteriores. Esta división temporal evita que el modelo
 aprenda con información futura.
 
 Se comparan tres alternativas:
@@ -122,15 +122,15 @@ Se comparan tres alternativas:
 
 La regularización de la logística se selecciona dentro del periodo de
 entrenamiento mediante `TimeSeriesSplit` con tres particiones. El parámetro
-seleccionado fue `C = 0,03`, lo que favorece un modelo estable frente al ruido.
+seleccionado fue `C = 0,01`, lo que favorece un modelo estable frente al ruido.
 
 ## 5. Resultados del modelo
 
 | Modelo | ROC-AUC | AP | Brier | Log loss | Accuracy (0,5) | Precision | Recall | F1 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Baseline histórico | 0,6198 | 0,4181 | 0,2116 | 0,6125 | 0,6722 | 0,4970 | 0,0574 | 0,1030 |
-| Regresión logística | **0,6410** | **0,4580** | **0,2082** | **0,6050** | 0,6831 | 0,5605 | 0,1520 | 0,2392 |
-| Gradient boosting | 0,6361 | 0,4486 | 0,2093 | 0,6073 | 0,6777 | 0,5367 | 0,1195 | 0,1955 |
+| Baseline histórico | 0,6157 | 0,4100 | 0,2103 | 0,6099 | 0,6772 | 0,4927 | 0,0583 | 0,1043 |
+| Regresión logística | **0,6350** | **0,4549** | **0,2069** | **0,6025** | 0,6889 | 0,5729 | 0,1356 | 0,2193 |
+| Gradient boosting | 0,6298 | 0,4481 | 0,2077 | 0,6045 | 0,6877 | 0,5657 | 0,1332 | 0,2156 |
 
 Se selecciona la **regresión logística** porque obtiene el menor Brier score y
 mejora al baseline en capacidad de discriminación y calidad de las
@@ -147,10 +147,10 @@ no decisiones binarias automáticas.
 
 | Intervalo de probabilidad | Turnos | Ocupación observada | Probabilidad media | Diferencia absoluta |
 | --- | ---: | ---: | ---: | ---: |
-| 0,0–0,2 | 3.053 | 0,1759 | 0,1744 | 0,0015 |
-| 0,2–0,4 | 14.216 | 0,3053 | 0,2941 | 0,0112 |
-| 0,4–0,6 | 4.153 | 0,4951 | 0,4844 | 0,0107 |
-| 0,6–0,8 | 263 | 0,6502 | 0,6210 | 0,0292 |
+| 0,0–0,2 | 2.712 | 0,1814 | 0,1796 | 0,0019 |
+| 0,2–0,4 | 14.648 | 0,2959 | 0,2959 | 0,0000 |
+| 0,4–0,6 | 4.184 | 0,4962 | 0,4806 | 0,0156 |
+| 0,6–0,8 | 122 | 0,6557 | 0,6134 | 0,0423 |
 
 La calibración es especialmente buena en los intervalos con mayor número de
 turnos. El tramo 0,6–0,8 debe interpretarse con cautela por su tamaño reducido.
@@ -184,26 +184,26 @@ corresponde al gestor y nunca modifica una reserva existente.
 
 ## 7. Resultados de escenarios de precio
 
-La siguiente tabla se calcula sobre los 21.685 turnos del periodo de test. Las
+La siguiente tabla se calcula sobre los 21.666 turnos del periodo de test. Las
 reservas e ingresos son **esperados**, es decir, se obtienen al sumar las
 probabilidades y `tarifa × probabilidad`; no son resultados reales.
 
 | Escenario | Tarifas modificadas | Reservas esperadas fijas | Reservas esperadas dinámicas | Ingreso fijo esperado | Ingreso dinámico esperado | Mejora relativa | Equivalente mensual |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Sensibilidad baja | 13.021 | 6.888,51 | 7.151,07 | 127.290,02 € | 128.883,61 € | +1,25 % | +132,80 € |
-| Sensibilidad media | 13.022 | 6.888,51 | 7.181,69 | 127.290,02 € | 129.196,40 € | +1,50 % | +158,87 € |
-| Sensibilidad alta | 13.022 | 6.888,51 | 7.251,88 | 127.290,02 € | 130.131,87 € | +2,23 % | +236,82 € |
+| Sensibilidad baja | 12.540 | 6.907,05 | 7.174,90 | 127.475,64 € | 128.836,59 € | +1,07 % | +113,41 € |
+| Sensibilidad media | 12.541 | 6.907,05 | 7.209,46 | 127.475,64 € | 129.232,54 € | +1,38 % | +146,41 € |
+| Sensibilidad alta | 12.541 | 6.907,05 | 7.283,56 | 127.475,64 € | 130.247,80 € | +2,17 % | +231,01 € |
 
 Interpretación:
 
 - Los tres escenarios aplican descuentos en demanda baja y subidas limitadas
   en demanda alta; los turnos de demanda intermedia mantienen su tarifa.
 - Al aumentar la sensibilidad configurada, el descuento genera más reservas
-  esperadas. La sensibilidad alta incrementa aproximadamente 363 reservas y
-  2.841,85 € de ingreso esperado frente a tarifa fija.
+  esperadas. La sensibilidad alta incrementa aproximadamente 377 reservas y
+  2.772,16 € de ingreso esperado frente a tarifa fija.
 - El intervalo completo representa una mejora de ingreso bruto esperado de
-  aproximadamente **1,25 % a 2,23 % anual**. La sensibilidad media es el caso
-  de referencia del MVP (+1,50 %); la sensibilidad alta representa un límite
+  aproximadamente **1,07 % a 2,17 % anual**. La sensibilidad media es el caso
+  de referencia del MVP (+1,38 %); la sensibilidad alta representa un límite
   superior de hipótesis, no una recomendación comercial para un club real.
 - La diferencia entre escenarios expresa únicamente el supuesto de respuesta
   al precio: no demuestra que un club real alcance esos resultados.
