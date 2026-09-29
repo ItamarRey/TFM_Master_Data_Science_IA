@@ -2,6 +2,9 @@ from fastapi import APIRouter, HTTPException
 
 from backend.app.schemas.prediction import PredictionRequest, PredictionResponse
 from backend.app.services.prediction_service import ModelNotReadyError, predict_turn
+from backend.app.services.weather_service import (
+    WeatherProviderError,
+)
 
 router = APIRouter()
 
@@ -15,3 +18,5 @@ def create_prediction(request: PredictionRequest) -> PredictionResponse:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except WeatherProviderError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc

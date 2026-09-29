@@ -15,6 +15,10 @@ python -m pip install --upgrade pip
 pip install -e ".[dev]"
 ```
 
+El proyecto fija `scikit-learn` por debajo de la versión 1.9 para conservar la
+compatibilidad con el artefacto del modelo entrenado. Si vuelves a entrenar el
+modelo, su versión queda registrada en `models/occupancy_model_metadata.json`.
+
 En VS Code selecciona el intérprete de `.venv`. Después, usa dos terminales:
 
 ```powershell
@@ -42,10 +46,16 @@ uvicorn backend.app.main:app --reload
 streamlit run frontend/streamlit_app.py
 ```
 
-En **Predicciones**, introduce la fecha, pista, tarifa publicada y pronóstico a
-48 horas. La interfaz llama a `POST /api/v1/predictions/`, muestra la
-probabilidad estimada y compara las tarifas permitidas. La aplicación nunca
-modifica reservas ni tarifas reales: la acción de aplicar es una simulación.
+En **Predicciones**, introduce la fecha, pista y tarifa publicada. La API
+consulta automáticamente la previsión horaria pública de Open-Meteo para la
+ubicación configurada del club y la incorpora a `POST /api/v1/predictions/`.
+La interfaz también ofrece un modo secundario de simulación meteorológica para
+probar condiciones alternativas durante la defensa. Puedes consultar la
+previsión normalizada directamente en `GET /api/v1/weather/forecast`.
+
+La aplicación muestra la probabilidad estimada y compara las tarifas
+permitidas. Nunca modifica reservas ni tarifas reales: la acción de aplicar es
+una simulación.
 
 ## Comprobaciones
 

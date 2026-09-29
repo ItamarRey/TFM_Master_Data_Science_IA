@@ -84,13 +84,9 @@ def discount_response_pct(elasticity: float) -> float:
     return ((0.90**-elasticity) - 1) * 100
 
 
-def next_weekday(weekday: int) -> date:
-    """Selecciona una fecha de referencia posterior a las próximas 48 h."""
-    today = date.today()
-    days_until = (weekday - today.weekday()) % 7
-    if days_until < 2:
-        days_until += 7
-    return today + timedelta(days=days_until)
+def next_prediction_date() -> date:
+    """Propone un turno cercano con previsión automática disponible."""
+    return date.today() + timedelta(days=1)
 
 
 inject_dashboard_styles()
@@ -174,13 +170,11 @@ else:
                     {
                         "prediction_preferred_scenario": selected,
                         "prediction_scenario": selected,
-                        "prediction_date": next_weekday(5 if peak_scenario else 0),
+                        "prediction_date": next_prediction_date(),
                         "prediction_court": "exterior_1",
                         "prediction_start_time": "20:00" if peak_scenario else "08:00",
                         "prediction_current_price": 21.0 if peak_scenario else 16.0,
-                        "prediction_temperature": 22.0,
-                        "prediction_precipitation": 0.0,
-                        "prediction_wind": 15.0,
+                        "prediction_manual_weather": False,
                         "prediction_autorun": True,
                     }
                 )

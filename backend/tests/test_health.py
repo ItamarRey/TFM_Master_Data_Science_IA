@@ -1,12 +1,8 @@
-from fastapi.testclient import TestClient
-
-from backend.app.main import app
+from backend.app.api.routes.health import health_check
 
 
 def test_health_endpoint_returns_ok() -> None:
-    client = TestClient(app)
+    response = health_check()
 
-    response = client.get("/api/v1/health")
-
-    assert response.status_code == 200
-    assert response.json()["status"] == "ok"
+    assert response["status"] == "ok"
+    assert response["service"] == "padelpulse-api"

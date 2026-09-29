@@ -12,6 +12,7 @@ import joblib
 import pandas as pd
 
 from backend.app.schemas.prediction import PredictionRequest
+from backend.app.services.weather_service import fetch_turn_weather, simulated_turn_weather
 from padel_pricing.modeling.dataset import MODEL_FEATURES
 from padel_pricing.pricing import load_pricing_policy, recommend_price
 from padel_pricing.simulation.generator import PUBLIC_HOLIDAYS
@@ -41,11 +42,19 @@ def _load_policy() -> Any:
 
 def predict_turn(request: PredictionRequest) -> dict[str, Any]:
     """Devuelve probabilidad, recomendación y explicación controlada para un turno."""
-    model_input = build_model_input(request)
+    weather = _resolve_weather(request)
+    resolved_request = request.model_copy(
+        update={
+            "forecast_temperature_c": weather.temperature_c,
+            "forecast_precipitation_mm": weather.precipitation_mm,
+            "forecast_wind_kmh": weather.wind_kmh,
+        }
+    )
+    model_input = build_model_input(resolved_request)
     probability = float(_load_model().predict_proba(model_input)[:, 1][0])
     policy = _load_policy()
     recommendation = recommend_price(
-        current_price_eur=request.current_price,
+        current_price_eur=resolved_request.current_price,
         occupancy_probability=probability,
         scenario_name=request.scenario,
         policy=policy,
@@ -61,13 +70,37 @@ def predict_turn(request: PredictionRequest) -> dict[str, Any]:
         "expected_revenue_current": recommendation.expected_revenue_current_eur,
         "expected_revenue_suggested": recommendation.expected_revenue_suggested_eur,
         "candidates": [asdict(candidate) for candidate in recommendation.candidates],
-        "explanation": _build_explanation(request, probability, recommendation.explanation),
+        "weather": weather.as_response().model_dump(),
+        "explanation": _build_explanation(
+            resolved_request, probability, recommendation.explanation
+        ),
         "warning": "Datos sintéticos · La recomendación es un escenario y requiere revisión.",
     }
 
 
+def _resolve_weather(request: PredictionRequest):
+    if request.weather_mode == "automatic":
+        return fetch_turn_weather(request.date, request.start_time)
+    return simulated_turn_weather(
+        request.date,
+        request.start_time,
+        float(request.forecast_temperature_c),
+        float(request.forecast_precipitation_mm),
+        float(request.forecast_wind_kmh),
+    )
+
+
 def build_model_input(request: PredictionRequest) -> pd.DataFrame:
     """Transforma la entrada de API en las mismas variables usadas al entrenar."""
+    if any(
+        value is None
+        for value in (
+            request.forecast_temperature_c,
+            request.forecast_precipitation_mm,
+            request.forecast_wind_kmh,
+        )
+    ):
+        raise ValueError("La predicción necesita una previsión meteorológica resuelta.")
     court_type = _court_type(request.court_id)
     timestamp = datetime.combine(request.date, request.start_time)
     hour = timestamp.hour

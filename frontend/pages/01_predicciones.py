@@ -30,6 +30,11 @@ def next_weekday(weekday: int) -> date:
     return today + timedelta(days=days_until)
 
 
+def next_prediction_date() -> date:
+    """Propone un turno cercano para el que la previsión automática suele existir."""
+    return date.today() + timedelta(days=1)
+
+
 def inject_styles() -> None:
     st.markdown(
         """
@@ -107,6 +112,11 @@ def inject_styles() -> None:
         .factor-card { background: #f0f4fb; padding: .8rem; border-radius: .65rem;
           min-height: 95px; }
         .factor-card strong { color: #4e6388; font-size: .8rem; letter-spacing: .04em; }
+        .weather-auto-card { background: #eaf3ff; border: 1px solid #c8ddf7; border-radius: .7rem;
+          padding: .85rem .9rem; color: #24496f; margin: .65rem 0 .85rem; }
+        .weather-auto-card strong { color: #1f57be; }
+        .weather-simulation-card { background: #fff7e7; border: 1px solid #f3d18e; border-radius: .7rem;
+          padding: .75rem .9rem; color: #805800; margin: .65rem 0 .85rem; }
         .brand { font-size: 1.75rem; font-weight: 800; margin-top: .8rem; }
         .brand-subtitle { color: #8da0c2 !important; margin-top: -.4rem; }
         </style>
@@ -164,9 +174,7 @@ def run_reference_prediction() -> None:
         "start_time": st.session_state.get("prediction_start_time", "08:00"),
         "current_price": st.session_state.get("prediction_current_price", 20.0),
         "scenario": st.session_state.get("prediction_scenario", "medium"),
-        "forecast_temperature_c": st.session_state.get("prediction_temperature", 22.0),
-        "forecast_precipitation_mm": st.session_state.get("prediction_precipitation", 0.0),
-        "forecast_wind_kmh": st.session_state.get("prediction_wind", 15.0),
+        "weather_mode": "automatic",
     }
     try:
         st.session_state["prediction_result"] = create_prediction(payload)
@@ -255,9 +263,17 @@ with left:
         st.markdown(
             '<p class="card-caption">Selecciona el turno a analizar</p>', unsafe_allow_html=True
         )
+        manual_weather = st.toggle(
+            "Simular otra meteorología",
+            value=False,
+            key="prediction_manual_weather",
+            help="Úsalo solo para comprobar cómo respondería el modelo a un clima alternativo.",
+        )
         with st.form("prediction_form"):
             st.markdown("**Datos del turno**")
-            selected_date = st.date_input("Fecha", value=next_weekday(5), key="prediction_date")
+            selected_date = st.date_input(
+                "Fecha", value=next_prediction_date(), key="prediction_date"
+            )
             court_id = st.selectbox(
                 "Pista a gestionar",
                 options=list(COURTS),
@@ -268,14 +284,38 @@ with left:
             current_price = st.number_input(
                 "Tarifa vigente (€)", 14.0, 30.0, 21.0, 0.5, key="prediction_current_price"
             )
-            st.markdown("**Previsión meteorológica (disponible 48 h antes)**")
-            temperature = st.slider(
-                "Temperatura prevista (°C)", 10.0, 35.0, 22.0, 0.5, key="prediction_temperature"
-            )
-            precipitation = st.slider(
-                "Lluvia prevista (mm)", 0.0, 10.0, 0.0, 0.1, key="prediction_precipitation"
-            )
-            wind = st.slider("Viento previsto (km/h)", 0.0, 50.0, 15.0, 1.0, key="prediction_wind")
+            st.markdown("**Previsión meteorológica**")
+            if manual_weather:
+                st.markdown(
+                    '<div class="weather-simulation-card"><strong>Modo de simulación</strong><br>'
+                    "Estos valores sustituyen temporalmente la previsión automática.</div>",
+                    unsafe_allow_html=True,
+                )
+                temperature = st.slider(
+                    "Temperatura simulada (°C)",
+                    10.0,
+                    35.0,
+                    22.0,
+                    0.5,
+                    key="prediction_temperature",
+                )
+                precipitation = st.slider(
+                    "Lluvia simulada (mm)",
+                    0.0,
+                    10.0,
+                    0.0,
+                    0.1,
+                    key="prediction_precipitation",
+                )
+                wind = st.slider(
+                    "Viento simulado (km/h)", 0.0, 50.0, 15.0, 1.0, key="prediction_wind"
+                )
+            else:
+                st.markdown(
+                    '<div class="weather-auto-card"><strong>☁️ Previsión automática</strong><br>'
+                    "La API consultará Open-Meteo para la ubicación del club al calcular el turno.</div>",
+                    unsafe_allow_html=True,
+                )
             preferred_scenario = st.session_state.get("prediction_preferred_scenario", "medium")
             scenario = st.selectbox(
                 "Respuesta esperada al precio",
@@ -287,7 +327,9 @@ with left:
             submitted = st.form_submit_button(
                 "Actualizar predicción", type="primary", use_container_width=True
             )
-        st.caption("Las variables se consideran conocidas 48 horas antes del turno.")
+        st.caption(
+            "La previsión se obtiene automáticamente al actualizar. La simulación manual sirve solo para pruebas."
+        )
 
 if submitted:
     payload = {
@@ -296,10 +338,16 @@ if submitted:
         "start_time": start_time,
         "current_price": current_price,
         "scenario": scenario,
-        "forecast_temperature_c": temperature,
-        "forecast_precipitation_mm": precipitation,
-        "forecast_wind_kmh": wind,
+        "weather_mode": "simulation" if manual_weather else "automatic",
     }
+    if manual_weather:
+        payload.update(
+            {
+                "forecast_temperature_c": temperature,
+                "forecast_precipitation_mm": precipitation,
+                "forecast_wind_kmh": wind,
+            }
+        )
     try:
         st.session_state["prediction_result"] = create_prediction(payload)
         st.session_state["prediction_inputs"] = payload
@@ -338,8 +386,12 @@ with center:
                 f'<div class="result-stat"><span class="card-caption">Rango comparado</span><br><strong>{minimum:.0%} – {maximum:.0%}</strong></div>',
                 unsafe_allow_html=True,
             )
+            weather = result["weather"]
+            source_label = str(weather["source_label"])
+            source_color = "#ad6800" if bool(weather["is_simulation"]) else "#108865"
             stats[1].markdown(
-                '<div class="result-stat"><span class="card-caption">Calidad del dato</span><br><strong style="color:#108865">Alta</strong></div>',
+                '<div class="result-stat"><span class="card-caption">METEOROLOGÍA</span><br>'
+                f'<strong style="color:{source_color}">{source_label}</strong></div>',
                 unsafe_allow_html=True,
             )
             stats[2].markdown(
@@ -365,9 +417,15 @@ with center:
         with st.container(border=True):
             st.subheader("Por qué aparece esta recomendación")
             factor_columns = st.columns(3)
-            weather_text = f"{float(inputs.get('forecast_temperature_c', 0)):.0f} °C · {float(inputs.get('forecast_precipitation_mm', 0)):.1f} mm"
+            weather = result["weather"]
+            weather_text = (
+                f"{float(weather['temperature_c']):.0f} °C · "
+                f"{float(weather['precipitation_mm']):.1f} mm · "
+                f"{float(weather['wind_kmh']):.0f} km/h"
+            )
             factor_columns[0].markdown(
-                f'<div class="factor-card"><strong>METEOROLOGÍA</strong><br><br>{weather_text}</div>',
+                f'<div class="factor-card"><strong>METEOROLOGÍA</strong><br><br>{weather_text}'
+                f"<br><span class='card-caption'>{weather['condition']}</span></div>",
                 unsafe_allow_html=True,
             )
             factor_columns[1].markdown(
@@ -436,6 +494,6 @@ with right:
             )
 
 st.markdown(
-    '<div class="info-footer">ⓘ La predicción usa datos operativos sintéticos y previsión meteorológica pública. Puedes revisar o rechazar la recomendación.</div>',
+    '<div class="info-footer">ⓘ La predicción combina datos operativos sintéticos con previsión meteorológica pública obtenida automáticamente. Puedes revisar o rechazar la recomendación.</div>',
     unsafe_allow_html=True,
 )

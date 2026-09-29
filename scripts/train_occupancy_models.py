@@ -8,6 +8,7 @@ from pathlib import Path
 
 import joblib
 import pandas as pd
+from sklearn import __version__ as sklearn_version
 
 from padel_pricing.modeling import (
     prepare_modeling_data,
@@ -47,6 +48,7 @@ def main() -> None:
     split = temporal_train_test_split(data, test_start=args.test_start)
     result = run_experiment(split.train, split.test, seed=42)
     metadata = experiment_metadata(result, split.test_start)
+    metadata["scikit_learn_version"] = sklearn_version
     selected_name = select_deployable_model(result.metrics)
 
     models_dir = PROJECT_ROOT / "models"
