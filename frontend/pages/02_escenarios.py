@@ -24,16 +24,17 @@ SCENARIO_LABELS = {
     "high": "Sensibilidad alta",
 }
 SCENARIO_DESCRIPTIONS = {
-    "low": "La demanda apenas reacciona a cambios de tarifa.",
-    "medium": "La demanda reacciona de forma moderada a la tarifa.",
-    "high": "La demanda reacciona con fuerza a cambios de tarifa.",
+    "low": "Hipótesis conservadora: la demanda reacciona poco a los cambios de tarifa.",
+    "medium": "Hipótesis de referencia: la demanda reacciona de forma moderada a la tarifa.",
+    "high": "Hipótesis exigente: la demanda reacciona con fuerza a los cambios de tarifa.",
 }
 
 
 def scenario_figure(data: pd.DataFrame) -> go.Figure:
-    """Muestra el impacto neto para que las diferencias no queden ocultas."""
+    """Muestra impacto absoluto y relativo sin presentar una hipótesis como recomendación."""
     labels = [SCENARIO_LABELS.get(value, value) for value in data["scenario"]]
     differences = data["expected_revenue_difference_eur"]
+    relative_differences = differences / data["expected_revenue_fixed_eur"] * 100
     colors = ["#108865" if value > 0 else "#b9c8e0" for value in differences]
     figure = go.Figure()
     figure.add_trace(
@@ -42,9 +43,15 @@ def scenario_figure(data: pd.DataFrame) -> go.Figure:
             x=labels,
             y=differences,
             marker_color=colors,
-            text=[f"{value:+,.0f} €".replace(",", ".") for value in differences],
+            text=[
+                f"{value:+,.0f} €<br>({relative:+.1f}%)".replace(",", ".")
+                for value, relative in zip(differences, relative_differences, strict=True)
+            ],
             textposition="outside",
-            hovertemplate="%{x}<br>Diferencia: %{y:.2f} €<extra></extra>",
+            customdata=relative_differences,
+            hovertemplate=(
+                "%{x}<br>Diferencia: %{y:.2f} €<br>Mejora relativa: %{customdata:.2f}%<extra></extra>"
+            ),
         )
     )
     figure.update_layout(
@@ -71,6 +78,11 @@ def scenario_figure(data: pd.DataFrame) -> go.Figure:
 
 def value_for(data: pd.DataFrame, scenario: str, column: str) -> float:
     return float(data.loc[data["scenario"] == scenario, column].iloc[0])
+
+
+def percentage_change(value: float, baseline: float) -> float:
+    """Da escala al impacto sin confundir ingreso esperado con beneficio real."""
+    return value / baseline * 100 if baseline else 0.0
 
 
 def load_elasticities() -> dict[str, float]:
@@ -107,32 +119,48 @@ if not REPORT_PATH.exists():
     )
 else:
     data = pd.DataFrame(json.loads(REPORT_PATH.read_text(encoding="utf-8")))
-    best = data.loc[data["expected_revenue_difference_eur"].idxmax()]
-    baseline_revenue = float(best["expected_revenue_fixed_eur"])
-    best_difference = float(best["expected_revenue_difference_eur"])
-    best_changes = int(best["prices_changed"])
+    maximum_impact = data.loc[data["expected_revenue_difference_eur"].idxmax()]
+    maximum_scenario_label = SCENARIO_LABELS.get(
+        str(maximum_impact["scenario"]), str(maximum_impact["scenario"])
+    )
+    reference = data.loc[data["scenario"] == "medium"].iloc[0]
+    baseline_revenue = float(reference["expected_revenue_fixed_eur"])
+    maximum_difference = float(maximum_impact["expected_revenue_difference_eur"])
+    relative_improvements = (
+        data["expected_revenue_difference_eur"] / data["expected_revenue_fixed_eur"] * 100
+    )
+    lower_improvement = float(relative_improvements.min())
+    upper_improvement = float(relative_improvements.max())
 
     first, second, third, fourth = st.columns(4)
     with first:
         metric_card("INGRESO FIJO DE REFERENCIA", format_eur(baseline_revenue), "Periodo de test")
     with second:
         metric_card(
-            "MEJOR ESCENARIO",
-            SCENARIO_LABELS.get(str(best["scenario"]), str(best["scenario"])),
-            "Según ingreso esperado",
+            "CASO DE REFERENCIA",
+            SCENARIO_LABELS["medium"],
+            "Hipótesis central del MVP",
         )
     with third:
-        metric_card("DIFERENCIA ESPERADA", format_eur(best_difference), "Frente a tarifa fija")
+        metric_card(
+            "RANGO DE MEJORA ANUAL",
+            f"+{lower_improvement:.1f}% a +{upper_improvement:.1f}%",
+            "Ingreso bruto esperado",
+        )
     with fourth:
-        metric_card("TARIFAS MODIFICADAS", f"{best_changes:,}", "Turnos del periodo de test")
+        metric_card(
+            "MAYOR IMPACTO SIMULADO",
+            format_eur(maximum_difference),
+            f"≈ {format_eur(maximum_difference / 12)} al mes · {maximum_scenario_label}",
+        )
 
     st.write("")
     left, right = st.columns([1.75, 1], gap="large")
     with left:
         with st.container(border=True):
-            st.subheader("Impacto neto frente a tarifa fija")
+            st.subheader("Impacto simulado frente a tarifa fija")
             st.caption(
-                "Así se ve la diferencia real; comparar ingresos totales ocultaba los cambios pequeños."
+                "Cada barra muestra ingreso adicional esperado y su porcentaje sobre la tarifa fija."
             )
             st.plotly_chart(scenario_figure(data), use_container_width=True)
 
@@ -140,7 +168,7 @@ else:
         with st.container(border=True):
             st.subheader("Explora una hipótesis")
             st.caption(
-                "No es una estrategia comercial distinta: cambia el supuesto de respuesta al precio."
+                "No son estrategias comerciales distintas: cambian la respuesta al precio que se asume."
             )
             default_scenario = st.session_state.get("prediction_preferred_scenario", "medium")
             selected = st.selectbox(
@@ -152,16 +180,30 @@ else:
             selected_revenue = value_for(data, selected, "expected_revenue_dynamic_eur")
             selected_delta = value_for(data, selected, "expected_revenue_difference_eur")
             selected_occupancy = value_for(data, selected, "expected_occupancy_dynamic")
+            fixed_occupancy = value_for(data, selected, "expected_occupancy_fixed")
+            selected_fixed_revenue = value_for(data, selected, "expected_revenue_fixed_eur")
             selected_changes = int(value_for(data, selected, "prices_changed"))
             elasticity = load_elasticities()[selected]
             response = discount_response_pct(elasticity)
+            relative_delta = percentage_change(selected_delta, selected_fixed_revenue)
+            extra_reservations = selected_occupancy - fixed_occupancy
+            relative_reservations = percentage_change(extra_reservations, fixed_occupancy)
             st.markdown(f"**{SCENARIO_DESCRIPTIONS[selected]}**")
             st.metric(
-                "Ingreso dinámico esperado",
+                "Ingreso anual esperado",
                 format_eur(selected_revenue),
-                format_eur(selected_delta),
+                f"{format_eur(selected_delta)} · {relative_delta:+.2f}%",
             )
-            st.metric("Ocupación esperada", f"{selected_occupancy:,.0f} reservas", "en el periodo")
+            st.metric(
+                "Equivalente mensual",
+                format_eur(selected_delta / 12),
+                "Ingreso bruto esperado adicional",
+            )
+            st.metric(
+                "Reservas adicionales esperadas",
+                f"+{extra_reservations:,.0f}",
+                f"{relative_reservations:+.1f}% frente a tarifa fija",
+            )
             st.metric("Cambios de tarifa", f"{selected_changes:,}")
             st.caption(
                 f"Con un descuento ilustrativo del 10 %, la ocupación simulada variaría {response:+.1f} %."
@@ -200,7 +242,9 @@ else:
         st.dataframe(table, use_container_width=True, hide_index=True)
 
     st.markdown(
-        '<div class="soft-note">ⓘ La elasticidad al precio es un supuesto configurado. '
-        "Esta comparación sirve para apoyar la decisión del gestor, no para demostrar causalidad.</div>",
+        '<div class="soft-note">ⓘ La sensibilidad media es el caso de referencia. El rango '
+        "mostrado equivale aproximadamente a una mejora anual del ingreso bruto esperado, no a "
+        "beneficio garantizado. La elasticidad al precio es un supuesto configurado; esta "
+        "comparación no demuestra causalidad en un club real.</div>",
         unsafe_allow_html=True,
     )

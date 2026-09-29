@@ -188,11 +188,11 @@ La siguiente tabla se calcula sobre los 21.685 turnos del periodo de test. Las
 reservas e ingresos son **esperados**, es decir, se obtienen al sumar las
 probabilidades y `tarifa × probabilidad`; no son resultados reales.
 
-| Escenario | Tarifas modificadas | Reservas esperadas fijas | Reservas esperadas dinámicas | Ocupación esperada dinámica | Ingreso fijo esperado | Ingreso dinámico esperado | Diferencia |
+| Escenario | Tarifas modificadas | Reservas esperadas fijas | Reservas esperadas dinámicas | Ingreso fijo esperado | Ingreso dinámico esperado | Mejora relativa | Equivalente mensual |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Sensibilidad baja | 13.021 | 6.888,51 | 7.151,07 | 32,98 % | 127.290,02 € | 128.883,61 € | +1.593,59 € |
-| Sensibilidad media | 13.022 | 6.888,51 | 7.181,69 | 33,12 % | 127.290,02 € | 129.196,40 € | +1.906,38 € |
-| Sensibilidad alta | 13.022 | 6.888,51 | 7.251,88 | 33,44 % | 127.290,02 € | 130.131,87 € | +2.841,85 € |
+| Sensibilidad baja | 13.021 | 6.888,51 | 7.151,07 | 127.290,02 € | 128.883,61 € | +1,25 % | +132,80 € |
+| Sensibilidad media | 13.022 | 6.888,51 | 7.181,69 | 127.290,02 € | 129.196,40 € | +1,50 % | +158,87 € |
+| Sensibilidad alta | 13.022 | 6.888,51 | 7.251,88 | 127.290,02 € | 130.131,87 € | +2,23 % | +236,82 € |
 
 Interpretación:
 
@@ -201,6 +201,10 @@ Interpretación:
 - Al aumentar la sensibilidad configurada, el descuento genera más reservas
   esperadas. La sensibilidad alta incrementa aproximadamente 363 reservas y
   2.841,85 € de ingreso esperado frente a tarifa fija.
+- El intervalo completo representa una mejora de ingreso bruto esperado de
+  aproximadamente **1,25 % a 2,23 % anual**. La sensibilidad media es el caso
+  de referencia del MVP (+1,50 %); la sensibilidad alta representa un límite
+  superior de hipótesis, no una recomendación comercial para un club real.
 - La diferencia entre escenarios expresa únicamente el supuesto de respuesta
   al precio: no demuestra que un club real alcance esos resultados.
 
@@ -256,10 +260,13 @@ flowchart LR
     RULE --> API
 ```
 
-La pantalla **Predicciones** solicita fecha, pista, hora, tarifa actual y el
-pronóstico que estaría disponible 48 horas antes. FastAPI convierte esos datos
-en las mismas variables empleadas durante el entrenamiento, carga el artefacto
-de regresión logística y devuelve:
+La pantalla **Predicciones** solicita fecha, pista, hora y tarifa actual. La
+API consulta automáticamente la previsión pública horaria de la ubicación
+configurada del club y la convierte, junto con el resto de datos, en las mismas
+variables empleadas durante el entrenamiento. También existe un modo manual,
+separado y etiquetado como simulación, para probar condiciones meteorológicas
+alternativas durante la defensa. FastAPI carga el artefacto de regresión
+logística y devuelve:
 
 - probabilidad estimada de ocupación con la tarifa actual;
 - tarifa sugerida, variación porcentual y comparación de candidatas;
@@ -276,13 +283,15 @@ Las pantallas **Histórico** y **Escenarios** leen, respectivamente, los
 indicadores del EDA y la comparación agregada de precios generados por los
 scripts reproducibles. En Escenarios, baja, media y alta son **hipótesis de
 respuesta al precio**, no tres estrategias comerciales que el gestor conozca
-con certeza. La vista destaca el impacto neto frente a tarifa fija y permite
-abrir un turno de referencia ya calculado en Predicciones con la hipótesis
-elegida; el gestor puede modificar sus datos y recalcular desde allí.
+con certeza. La sensibilidad media se utiliza como caso de referencia y la
+vista comunica tanto el impacto absoluto como el relativo y mensual. El gestor
+puede abrir un turno de referencia ya calculado en Predicciones con la
+hipótesis elegida y recalcular desde allí.
 
-La interfaz etiqueta todos los resultados como sintéticos y la opción de
-aplicar tarifa solo registra una acción simulada. No existe automatización de
-cambios comerciales ni de reservas.
+La interfaz etiqueta todos los resultados como sintéticos. Al aplicar o
+mantener una tarifa, se actualiza un calendario local de tarifas simuladas que
+puede revisarse en la pantalla **Tarifas**. No existe automatización de cambios
+comerciales, reservas ni pagos reales.
 
 Para ejecutar el recorrido completo se generan los datos, EDA, modelo y
 escenarios en ese orden, y se inician `uvicorn backend.app.main:app --reload`
