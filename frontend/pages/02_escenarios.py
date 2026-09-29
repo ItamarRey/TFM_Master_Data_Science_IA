@@ -13,6 +13,8 @@ from components.dashboard_ui import (
     render_sidebar,
 )
 
+st.set_page_config(page_title="PádelPulse", page_icon="🎾", layout="wide")
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 REPORT_PATH = PROJECT_ROOT / "reports" / "generated" / "pricing_scenarios.json"
 PRICING_CONFIG_PATH = PROJECT_ROOT / "config" / "pricing_scenarios.json"

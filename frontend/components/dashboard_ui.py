@@ -4,10 +4,11 @@ import streamlit as st
 
 PAGE_PATHS = {
     "Predicciones": "pages/01_predicciones.py",
+    "Tarifas": "pages/04_tarifas.py",
     "Escenarios": "pages/02_escenarios.py",
     "Histórico": "pages/03_historico.py",
 }
-PAGE_ICONS = {"Predicciones": "🎯", "Escenarios": "💶", "Histórico": "📊"}
+PAGE_ICONS = {"Predicciones": "🎯", "Tarifas": "🗓️", "Escenarios": "💶", "Histórico": "📊"}
 
 
 def format_eur(value: float) -> str:

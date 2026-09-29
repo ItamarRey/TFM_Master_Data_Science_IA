@@ -5,6 +5,8 @@ import streamlit as st
 from components.dashboard_ui import inject_dashboard_styles, render_sidebar
 from services.api_client import create_decision, create_prediction
 
+st.set_page_config(page_title="PádelPulse", page_icon="🎾", layout="wide")
+
 COURTS = {
     "exterior_1": "Exterior 1",
     "exterior_2": "Exterior 2",
@@ -140,7 +142,7 @@ def demand_label(probability: float) -> tuple[str, str]:
 def save_manager_decision(
     action: str, result: dict[str, object], inputs: dict[str, object]
 ) -> None:
-    """Registra la acción en la API sin tocar una tarifa real del club."""
+    """Guarda una tarifa en el calendario simulado sin tocar un club real."""
     payload = {
         "action": action,
         "date": inputs["date"],
@@ -153,10 +155,13 @@ def save_manager_decision(
     }
     try:
         decision = create_decision(payload)
+        applied_price = float(decision["applied_price_eur"])
+        st.session_state["prediction_pending_price"] = applied_price
         st.session_state["applied_message"] = (
-            f"Decisión simulada registrada: {decision['action_label']}. "
-            "No se ha modificado ninguna tarifa real."
+            f"{decision['action_label']}: la tarifa simulada del turno queda en "
+            f"{format_eur(applied_price)}. Puedes verla en Tarifas."
         )
+        st.rerun()
     except Exception as exc:
         st.error(f"No se pudo registrar la decisión: {exc}")
 
@@ -232,6 +237,8 @@ def build_price_figure(candidates: list[dict[str, object]], suggested_price: flo
 inject_styles()
 inject_dashboard_styles()
 render_sidebar("Predicciones")
+if pending_price := st.session_state.pop("prediction_pending_price", None):
+    st.session_state["prediction_current_price"] = pending_price
 run_reference_prediction()
 
 header_left, header_right = st.columns([4, 1.35])
@@ -477,6 +484,12 @@ with right:
                 save_manager_decision("apply_suggested", result, inputs)
             if st.button("Mantener tarifa base", use_container_width=True):
                 save_manager_decision("keep_base", result, inputs)
+            st.page_link(
+                "pages/04_tarifas.py",
+                label="Ver tarifas programadas",
+                icon="🗓️",
+                use_container_width=True,
+            )
             st.page_link(
                 "pages/02_escenarios.py",
                 label="Comparar escenarios",

@@ -13,6 +13,8 @@ from components.dashboard_ui import (
 )
 from services.api_client import get_decisions
 
+st.set_page_config(page_title="PádelPulse", page_icon="🎾", layout="wide")
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 EDA_PATH = PROJECT_ROOT / "reports" / "generated" / "eda_metrics.json"
 

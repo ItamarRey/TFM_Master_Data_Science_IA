@@ -21,3 +21,4 @@ class DecisionResponse(DecisionRequest):
     id: str
     created_at: datetime
     action_label: str
+    applied_price_eur: float | None = None

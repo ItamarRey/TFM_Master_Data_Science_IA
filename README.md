@@ -54,8 +54,9 @@ probar condiciones alternativas durante la defensa. Puedes consultar la
 previsión normalizada directamente en `GET /api/v1/weather/forecast`.
 
 La aplicación muestra la probabilidad estimada y compara las tarifas
-permitidas. Nunca modifica reservas ni tarifas reales: la acción de aplicar es
-una simulación.
+permitidas. Al aplicar o mantener una decisión, crea una tarifa persistente en
+el calendario simulado de PádelPulse, visible en la vista **Tarifas**. Esa
+acción no modifica reservas, pagos ni tarifas reales de un club.
 
 ## Comprobaciones
 
