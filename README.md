@@ -1,12 +1,32 @@
-# PádelPulse: precios dinámicos para clubes de pádel
+# PádelPulse
 
-Base técnica del MVP del TFM. El proyecto usa datos operativos sintéticos y meteorología pública para estimar la ocupación de un turno y sugerir una tarifa dentro de límites configurados.
+> MVP de precios dinámicos para clubes de pádel
 
-La carpeta `docs/` no se incluye a propósito: conserva tus entregas anteriores en el repositorio principal.
+PádelPulse ayuda a la persona gestora de un club a decidir la tarifa de un turno concreto. Estima la probabilidad de ocupación a partir del calendario, el tipo de pista, la tarifa actual y la previsión meteorológica, y propone una tarifa dentro de límites configurados.
+
+El gestor siempre revisa y decide. La aplicación no modifica reservas, pagos ni tarifas reales.
+
+## Qué incluye
+
+- Predicción de ocupación para un turno concreto.
+- Previsión meteorológica automática mediante Open-Meteo.
+- Simulación manual de condiciones meteorológicas para pruebas.
+- Recomendación de tarifa con variaciones limitadas.
+- Histórico de demanda por horario, día, tipo de pista y lluvia.
+- Comparación de escenarios de precio.
+- Calendario de tarifas simuladas aplicadas por el gestor.
+
+## Alcance del MVP
+
+El proyecto utiliza datos operativos sintéticos y meteorología pública. El escenario cubre 24 meses, seis pistas y 43.860 turnos ofertados.
+
+La regresión logística fue el modelo seleccionado para estimar ocupación. Se evaluó sobre un periodo temporal posterior al entrenamiento y obtuvo un Brier score de 0,2069 y un ROC-AUC de 0,6350.
+
+Estos resultados validan el funcionamiento del MVP dentro del escenario simulado. No prueban un beneficio económico real para un club ni sustituyen una validación con reservas reales.
 
 ## Inicio rápido en Windows con VS Code
 
-Desde la raíz del proyecto, abre una terminal de PowerShell y ejecuta:
+Desde la raíz del proyecto, abre PowerShell:
 
 ```powershell
 py -3.12 -m venv .venv
@@ -15,22 +35,11 @@ python -m pip install --upgrade pip
 pip install -e ".[dev]"
 ```
 
-El proyecto fija `scikit-learn` por debajo de la versión 1.9 para conservar la
-compatibilidad con el artefacto del modelo entrenado. Si vuelves a entrenar el
-modelo, su versión queda registrada en `models/occupancy_model_metadata.json`.
+En VS Code, selecciona el intérprete de `.venv`.
 
-En VS Code selecciona el intérprete de `.venv`. Después, usa dos terminales:
+## Generar los artefactos del MVP
 
-```powershell
-uvicorn backend.app.main:app --reload
-streamlit run frontend/streamlit_app.py
-```
-
-La API quedará disponible en `http://127.0.0.1:8000`, su documentación en `/docs` y el dashboard en `http://localhost:8501`.
-
-## Ejecutar el MVP completo
-
-Antes de abrir una predicción, genera los artefactos que consume la aplicación:
+En una terminal con el entorno virtual activado:
 
 ```powershell
 python scripts/generate_synthetic_data.py
@@ -39,24 +48,35 @@ python scripts/train_occupancy_models.py
 python scripts/simulate_pricing_scenarios.py
 ```
 
-Después inicia la API y Streamlit en dos terminales, desde la raíz del proyecto:
+## Ejecutar la aplicación
+
+Abre dos terminales desde la raíz del proyecto.
+
+Terminal 1:
 
 ```powershell
 uvicorn backend.app.main:app --reload
+```
+
+Terminal 2:
+
+```powershell
 streamlit run frontend/streamlit_app.py
 ```
 
-En **Predicciones**, introduce la fecha, pista y tarifa publicada. La API
-consulta automáticamente la previsión horaria pública de Open-Meteo para la
-ubicación configurada del club y la incorpora a `POST /api/v1/predictions/`.
-La interfaz también ofrece un modo secundario de simulación meteorológica para
-probar condiciones alternativas durante la defensa. Puedes consultar la
-previsión normalizada directamente en `GET /api/v1/weather/forecast`.
+- Dashboard: `http://localhost:8501`
+- API: `http://127.0.0.1:8000`
+- Documentación de la API: `http://127.0.0.1:8000/docs`
 
-La aplicación muestra la probabilidad estimada y compara las tarifas
-permitidas. Al aplicar o mantener una decisión, crea una tarifa persistente en
-el calendario simulado de PádelPulse, visible en la vista **Tarifas**. Esa
-acción no modifica reservas, pagos ni tarifas reales de un club.
+## Uso del producto
+
+1. En **Predicciones**, selecciona fecha, pista, hora y tarifa vigente.
+2. La aplicación consulta automáticamente la previsión meteorológica del turno.
+3. Revisa la probabilidad estimada, las tarifas candidatas y la recomendación.
+4. Aplica o mantén la tarifa. La decisión se registra solo en el calendario simulado.
+5. Consulta **Tarifas**, **Histórico** y **Escenarios** para completar el análisis.
+
+La predicción representa el contexto disponible antes del turno. El efecto de las alternativas de precio se muestra como un escenario basado en elasticidades configuradas, no como una estimación causal demostrada en un club real.
 
 ## Comprobaciones
 
@@ -66,32 +86,20 @@ ruff check .
 ruff format --check .
 ```
 
-## Análisis exploratorio
+## Estructura del proyecto
 
-Después de generar el dataset Gold, ejecuta:
-
-```powershell
-python scripts/run_eda.py
+```text
+backend/               API FastAPI, validación y servicios
+frontend/              Dashboard Streamlit y componentes visuales
+src/padel_pricing/     Lógica reutilizable de datos, modelos y precios
+scripts/               Generación de datos, EDA, entrenamiento y escenarios
+config/                Parámetros de simulación y reglas de precio
+data/                  Datos generados localmente
+models/                Modelo entrenado generado localmente
+reports/generated/     Informes generados por los scripts
+docs/                  Entregas y documentación del proyecto
 ```
 
-El script no modifica los datos. Genera un informe Markdown y un fichero JSON en
-`reports/generated/` con controles de calidad, ocupación por franja y pista,
-efecto de la lluvia en pistas exteriores e ingresos simulados.
+## Próximos pasos
 
-## Estructura
-
-- `frontend/`: interfaz Streamlit y componentes visuales.
-- `backend/`: API FastAPI, validación y servicios.
-- `src/padel_pricing/`: lógica reutilizable de simulación, modelos y reglas de precio.
-- `data/`: datos locales generados; no se suben datos pesados al repositorio.
-- `models/`: artefactos del modelo entrenado; no se suben al repositorio.
-- `config/`: escenarios y parámetros configurables.
-
-## Orden de implementación
-
-1. Generar los datos sintéticos y guardarlos en `data/gold/`.
-2. Crear variables y baseline histórico.
-3. Entrenar y evaluar el modelo de ocupación.
-4. Implementar la regla de tarifa y los escenarios.
-5. Conectar los endpoints de FastAPI.
-6. Conectar el dashboard Streamlit con la API.
+Para implantar PádelPulse en un club real sería necesario integrar su sistema de reservas, anonimizar y validar los datos, reentrenar el modelo con su histórico y realizar un piloto controlado frente a tarifas fijas.
