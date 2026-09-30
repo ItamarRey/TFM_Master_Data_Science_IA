@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "padel-dynamic-pricing"
+version = "0.1.0"
+description = "MVP de predicción de ocupación y precios dinámicos para clubes de pádel"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    # FastAPI 0.141 introduces a TestClient transition that is incompatible
+    # with the test stack used by this MVP. Keep the API dependency in the
+    # stable 0.115–0.140 line until that migration is made deliberately.
+    "fastapi>=0.115,<0.141",
+    "httpx>=0.27",
+    "joblib>=1.3",
+    "pandas>=2.2",
+    "plotly>=5.24",
+    "pyarrow>=17",
+    "scikit-learn>=1.5,<1.9",
+    "streamlit>=1.40",
+    "uvicorn[standard]>=0.30",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.8",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "src"]
+testpaths = ["backend/tests", "tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]

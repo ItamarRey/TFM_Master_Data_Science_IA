@@ -1,0 +1,1 @@
+"""Capa visual Streamlit."""

@@ -1,0 +1,33 @@
+# Python y herramientas
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+
+# Configuración local
+.env
+!.env.example
+
+# Datos y modelos generados
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/gold/*
+!data/gold/.gitkeep
+data/app/*
+!data/app/.gitkeep
+models/*
+!models/.gitkeep
+
+# Informes generados a partir de datos locales
+reports/generated/*
+!reports/generated/.gitkeep
+
+# Sistema y editor
+.DS_Store
+Thumbs.db
+.vscode/*.log
